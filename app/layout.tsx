@@ -2,6 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
+import { LayoutClient } from "./layout-client"
+import { TanstackQueryProvider } from "@/lib/tanstack-query/tanstack-query-provider"
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -24,12 +26,19 @@ export const metadata: Metadata = {
 
 export default function RootLayout({
   children,
-}: Readonly<{
-  children: React.ReactNode
-}>) {
+}: Readonly < {
+  children: React.React.Node
+} > ) {
   return (
     <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} dark`}>
-      <body className="font-sans antialiased">{children}</body>
+      <body className="font-sans antialiased">
+        <TanstackQueryProvider>
+          <LayoutClient />
+            <div className="flex h-screen w-screen overflow-hidden">
+              {children}
+            </div>
+        </TanstackQueryProvider>
+      </body>
     </html>
   )
 }
