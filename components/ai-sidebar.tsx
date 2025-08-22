@@ -245,6 +245,24 @@ export default function AISidebar({
                 </Button>
               </div>
             </div>
+            {/* Added the missing Model section */}
+            <div>
+              <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Model</Label>
+              <div className="mt-3">
+                <Select value={selectedModel} onValueChange={setSelectedModel}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a model" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {models.map((model) => (
+                      <SelectItem key={model.id} value={model.id}>
+                        {model.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
             <div>
               <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Persona</Label>
               <div className="mt-3">
