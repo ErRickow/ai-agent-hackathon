@@ -1,6 +1,7 @@
 "use client";
 
 import * as React from "react";
+import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Loader2, Bot } from "lucide-react";
@@ -19,6 +20,13 @@ import { MessageUser } from "./prompt-kit/message-user";
 import { MessageAssistant } from "./prompt-kit/message-assistant";
 import { cn } from "@/lib/utils";
 import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "./prompt-kit/prompt-input";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import rehypeKatex from 'rehype-katex';
+import remarkGfm from 'remark-gfm';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 
 interface Message {
   id: string;
@@ -61,6 +69,44 @@ export default function ChatInterface({
   handleKeyPress,
 }: ChatInterfaceProps) {
   const messagesEndRef = React.useRef < HTMLDivElement > (null);
+  
+  // Komponen rendering Markdown yang disederhanakan
+  const MarkdownRenderer = ({ content }: { content: string }) => {
+    const isStreaming = content.endsWith("▋");
+    const displayContent = isStreaming ? content.slice(0, -1) : content;
+    
+    return (
+      <div className="prose dark:prose-invert">
+        <ReactMarkdown
+          remarkPlugins={[remarkGfm, remarkMath]}
+          rehypePlugins={[rehypeKatex]}
+          components={{
+            code(props) {
+              const { children, className, node, ...rest } = props;
+              const match = /language-(\w+)/.exec(className || '');
+              return match ? (
+                <SyntaxHighlighter
+                  {...rest}
+                  PreTag="div"
+                  language={match[1]}
+                  style={vscDarkPlus}
+                >
+                  {String(children).replace(/\n$/, '')}
+                </SyntaxHighlighter>
+              ) : (
+                <code {...rest} className={className}>
+                  {children}
+                </code>
+              );
+            },
+          }}
+        >
+          {displayContent}
+        </ReactMarkdown>
+        {isStreaming && <span className="animate-pulse">▋</span>}
+      </div>
+    );
+  };
   
   return (
     <>

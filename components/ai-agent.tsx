@@ -98,7 +98,8 @@ function AIAgent() {
       });
 
       if (!response.ok) {
-        throw new Error("Failed to get response");
+        const errorData = await response.json();
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
       }
 
       const reader = response.body?.getReader();
@@ -126,28 +127,31 @@ function AIAgent() {
                   setStreamingMessage(fullResponse);
                 }
               } catch (e) {
+                console.error("Failed to parse JSON chunk:", e, "Chunk:", data);
               }
             }
           }
         }
       }
-
+      
+      const finalResponseContent = fullResponse.trim() || "Tidak ada jawaban yang diterima dari AI.";
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: fullResponse,
+        content: finalResponseContent,
         timestamp: new Date(),
         provider,
       };
-
       setMessages((prev) => [...prev, assistantMessage]);
       setStreamingMessage("");
+
     } catch (error) {
-      console.error("Error:", error);
+      console.error("Error sending message:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: "Maaf, terjadi kesalahan saat memproses permintaan Anda.",
+        content: `Maaf, terjadi kesalahan saat memproses permintaan Anda: ${error.message}`,
         timestamp: new Date(),
         provider,
       };
@@ -169,6 +173,9 @@ function AIAgent() {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate image");
+      }
 
       const imageMessage: Message = {
         id: Date.now().toString(),
@@ -201,6 +208,9 @@ function AIAgent() {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate speech");
+      }
 
       const audioMessage: Message = {
         id: Date.now().toString(),
@@ -233,6 +243,9 @@ function AIAgent() {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to generate embedding");
+      }
 
       const embeddingMessage: Message = {
         id: Date.now().toString(),
@@ -271,6 +284,9 @@ function AIAgent() {
       });
 
       const data = await response.json();
+      if (!response.ok) {
+        throw new Error(data.error || "Failed to analyze image");
+      }
 
       const visionMessage: Message = {
         id: Date.now().toString(),
