@@ -22,6 +22,13 @@ import {
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import PersonaSettingsDialog from "./persona-settings-dialog";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+
+interface Model {
+  id: string;
+  name: string;
+}
 
 interface AISidebarProps {
   aiMode: string;
@@ -37,6 +44,9 @@ interface AISidebarProps {
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
   onSelectPersona: (persona: any) => void;
+  models: Model[];
+  selectedModel: string;
+  setSelectedModel: (modelId: string) => void;
 }
 
 export default function AISidebar({
@@ -52,7 +62,10 @@ export default function AISidebar({
   setUseCustomPrompt,
   isSidebarOpen,
   setIsSidebarOpen,
-  onSelectPersona
+  onSelectPersona,
+  models,
+  selectedModel,
+  setSelectedModel,
 }: AISidebarProps) {
   const handleSelectPersona = (persona: any) => {
     onSelectPersona(persona);
@@ -136,6 +149,23 @@ export default function AISidebar({
             </div>
           </div>
           <div>
+            <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Model</Label>
+            <div className="mt-3">
+              <Select value={selectedModel} onValueChange={setSelectedModel}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((model) => (
+                    <SelectItem key={model.id} value={model.id}>
+                      {model.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          <div>
             <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">Persona</Label>
             <div className="mt-3">
               <div className="p-3 bg-secondary/30 rounded-lg mb-3">
@@ -162,7 +192,7 @@ export default function AISidebar({
         <SheetContent side="left" className="w-80 p-0">
           <div className="p-6 border-b border-border">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              AI Agent Hackathon
+              AI Agent 
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Multi-modal AI Assistant</p>
           </div>

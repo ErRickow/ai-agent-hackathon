@@ -45,6 +45,11 @@ interface Persona {
   color: string;
 }
 
+interface Model {
+  id: string;
+  name: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -61,6 +66,8 @@ type AIMode = "chat" | "image" | "vision" | "tts" | "embedding";
 
 function AIAgent() {
   const [messages, setMessages] = useState<Message[]>([]);
+  const [models, setModels] = useState < Model[] > ([]);
+  const [selectedModel, setSelectedModel] = useState < string > ("");
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [provider, setProvider] = useState<Provider>("lunos");
@@ -80,6 +87,28 @@ function AIAgent() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingMessage]);
+  
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch(`/api/models?provider=${provider}`);
+        const data = await response.json();
+        if (data.models && data.models.length > 0) {
+          setModels(data.models);
+          // Atur model default ke model pertama dalam daftar
+          setSelectedModel(data.models[0].id);
+        } else {
+          setModels([]);
+          setSelectedModel("");
+        }
+      } catch (error) {
+        console.error("Failed to fetch models:", error);
+        setModels([]);
+        setSelectedModel("");
+      }
+    };
+    fetchModels();
+  }, [provider]); // Dijalankan setiap kali 'provider' berubah
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -106,6 +135,7 @@ function AIAgent() {
         body: JSON.stringify({
           message: input.trim(),
           provider,
+          model: selectedModel,
           systemPrompt,
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
@@ -377,6 +407,9 @@ function AIAgent() {
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
           onSelectPersona={setSelectedPersona}
+          models = { models }
+          selectedModel = { selectedModel }
+          setSelectedModel = { setSelectedModel }
         />
         <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">

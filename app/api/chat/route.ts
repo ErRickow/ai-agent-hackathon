@@ -78,7 +78,12 @@ class UnliClient {
 
 export async function POST(request: NextRequest) {
   try {
-    const { message, provider, messages, systemPrompt } = await request.json()
+    const { message, provider, model, messages, systemPrompt } = await request.json()
+    
+    // Validasi bahwa model ada
+    if (!model) {
+      return NextResponse.json({ error: "Model ID is required" }, { status: 400 });
+    }
     
     const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : []
     const allMessages = [...systemMessage, ...messages, { role: "user", content: message }]
@@ -93,7 +98,7 @@ export async function POST(request: NextRequest) {
       })
       
       response = await client.chat.createCompletion({
-        model: "google/gemini-2.0-flash",
+        model: model,
         messages: allMessages,
         max_tokens: 4024,
         temperature: 0.7,
@@ -106,7 +111,7 @@ export async function POST(request: NextRequest) {
       })
       
       response = await client.chat.completions.create({
-        model: "auto",
+        model: model,
         messages: allMessages,
         max_tokens: 4024,
         temperature: 0.7,

@@ -39,7 +39,7 @@ class LunosClient {
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, provider } = await request.json()
+    const { text, model, provider } = await request.json()
 
     if (provider === "lunos") {
       const client = new LunosClient({
