@@ -1,7 +1,6 @@
 "use client";
 
 import * as React from "react";
-import { Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Loader2, Bot } from "lucide-react";
@@ -20,6 +19,7 @@ import { MessageUser } from "./prompt-kit/message-user";
 import { MessageAssistant } from "./prompt-kit/message-assistant";
 import { cn } from "@/lib/utils";
 import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "./prompt-kit/prompt-input";
+import { Textarea } from "@/components/ui/textarea";
 
 interface Message {
   id: string;

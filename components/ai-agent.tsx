@@ -28,7 +28,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { predefinedPersonas } from "./persona"
+import { predefinedPersonas, Persona } from "./persona";
 import AISidebar from "./ai-sidebar";
 import ChatInterface from "./chat-interface";
 import ImageGenerationInterface from "./image-generation-interface";
@@ -66,7 +66,7 @@ function AIAgent() {
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  
+
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -133,9 +133,9 @@ function AIAgent() {
           }
         }
       }
-      
+
       const finalResponseContent = fullResponse.trim() || "Tidak ada jawaban yang diterima dari AI.";
-      
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -143,7 +143,7 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
       };
-      setMessages((prev) => [...prev, assistantMessage]);
+      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
       setStreamingMessage("");
 
     } catch (error) {
@@ -155,7 +155,7 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
       };
-      setMessages((prev) => [...prev, errorMessage]);
+      setMessages((prevMessages) => [...prevMessages, errorMessage]);
     } finally {
       setIsLoading(false);
     }
@@ -306,7 +306,7 @@ function AIAgent() {
       setIsLoading(false);
     }
   };
-  
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -370,6 +370,7 @@ function AIAgent() {
           setUseCustomPrompt={setUseCustomPrompt}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
+          onSelectPersona={setSelectedPersona}
         />
         <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">
