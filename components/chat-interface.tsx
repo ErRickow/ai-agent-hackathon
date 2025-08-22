@@ -1,7 +1,6 @@
 "use client";
 
 import type React from "react";
-import { useRef, useEffect } from "react";
 import { Send, Bot, User, Loader2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -11,6 +10,7 @@ import { CodeBlock, CodeBlockCode, CodeBlockGroup } from "@/components/code-bloc
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
 
 interface Message {
   id: string;
@@ -43,7 +43,6 @@ interface ChatInterfaceProps {
   handleKeyPress: (e: React.KeyboardEvent) => void;
 }
 
-// Custom components untuk ReactMarkdown dengan CodeBlock baru
 const markdownComponents = {
   code({ node, inline, className, children, ...props }: any) {
     const match = /language-(\w+)/.exec(className || '');
@@ -53,7 +52,7 @@ const markdownComponents = {
     if (inline) {
       return (
         <code 
-          className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono"
+          className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono break-words"
           {...props}
         >
           {children}
@@ -89,7 +88,7 @@ const markdownComponents = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary hover:underline"
+        className="text-primary hover:underline break-all"
         {...props}
       >
         {children}
@@ -109,11 +108,7 @@ export default function ChatInterface({
   sendMessage,
   handleKeyPress,
 }: ChatInterfaceProps) {
-  const messagesEndRef = useRef < HTMLDivElement > (null);
-  
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingMessage]);
+  const messagesContainerRef = useAutoScroll([messages, streamingMessage]);
   
   const formatTimestamp = (date: Date) => {
     return date.toLocaleTimeString("id-ID", {
@@ -121,8 +116,7 @@ export default function ChatInterface({
       minute: "2-digit",
     });
   };
-
-  // Fungsi untuk menentukan warna teks yang kontras
+  
   const getContrastingTextColor = (hexColor: string) => {
     if (!hexColor) return '#FFFFFF';
     const r = parseInt(hexColor.substr(1, 2), 16);
@@ -131,13 +125,12 @@ export default function ChatInterface({
     const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
     return (yiq >= 128) ? '#000000' : '#FFFFFF';
   };
-
+  
   const userTextColor = getContrastingTextColor(selectedPersona.color);
   
   return (
     <>
-      {/* Messages Area */}
-      <div className="flex-1 overflow-auto p-4 space-y-4">
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div 
@@ -181,7 +174,7 @@ export default function ChatInterface({
               }`}
             >
               <div
-                className={`rounded-lg p-3 max-w-[80%]`}
+                className={`rounded-lg p-3 max-w-[80%] break-words`}
                 style={{
                   backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
                   color: message.role === 'user' ? userTextColor : 'var(--card-foreground)',
@@ -226,14 +219,13 @@ export default function ChatInterface({
           </div>
         ))}
 
-        {/* Streaming Message */}
         {streamingMessage && (
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
               <Bot className="w-4 h-4" />
             </div>
             <div className="flex-1 space-y-2">
-              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+              <div className="bg-muted rounded-lg p-3 max-w-[80%] break-words">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown
                     components={markdownComponents}
@@ -247,7 +239,6 @@ export default function ChatInterface({
           </div>
         )}
 
-        {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
           <div className="flex gap-3">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
@@ -257,17 +248,14 @@ export default function ChatInterface({
               <div className="bg-muted rounded-lg p-3 max-w-[80%]">
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">Mengetik...</span>
+                  <span className="text-sm">hmm...</span>
                 </div>
               </div>
             </div>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
-      {/* Input Area */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
         <div className="flex gap-2">
           <Textarea
