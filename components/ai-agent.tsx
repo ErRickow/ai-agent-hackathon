@@ -66,12 +66,7 @@ function AIAgent() {
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingMessage]);
-
+  
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
 
@@ -295,7 +290,7 @@ function AIAgent() {
       setIsLoading(false);
     }
   };
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -368,11 +363,30 @@ function AIAgent() {
                   <Menu className="w-5 h-5" />
                 </Button>
                 <div className="flex items-center gap-2">
-                  {getModeIcon(aiMode)}
-                  <h2 className="font-semibold capitalize">{getModeTitle(aiMode)}</h2>
-                  <Badge variant="secondary" className="text-xs">
-                    {provider === "lunos" ? "Lunos" : "Unli.dev"}
-                  </Badge>
+                  <div className="flex gap-1">
+                    {[
+                      { id: "chat", label: "Chat", icon: MessageSquare },
+                      { id: "image", label: "Image Gen", icon: ImageIcon },
+                      { id: "vision", label: "Vision", icon: Eye },
+                      { id: "tts", label: "Text-to-Speech", icon: Volume2 },
+                      { id: "embedding", label: "Embeddings", icon: Zap },
+                    ].map(({ id, label, icon: Icon }) => (
+                      <Tooltip key={id}>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant={aiMode === id ? "default" : "ghost"}
+                            size="icon"
+                            onClick={() => setAIMode(id as any)}
+                          >
+                            <Icon className="w-4 h-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>{label}</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ))}
+                  </div>
                 </div>
               </div>
               <div className="flex items-center gap-2">
