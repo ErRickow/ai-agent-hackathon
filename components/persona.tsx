@@ -11,6 +11,7 @@ import {
 import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
 import { excel } from "@/lib/prompts/excel-expert"
+import { agentAssistant } from "@/lib/prompts/assistant"
 
 export interface Persona {
   id: string
@@ -26,7 +27,7 @@ export const predefinedPersonas: Persona[] = [
   id: "assistant",
   name: "AI Assistant",
   icon: <Bot className="w-4 h-4" />,
-  systemPrompt: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
+  systemPrompt: agentAssistant,
   description: "General purpose helpful assistant",
   color: "#6366F1",
 },

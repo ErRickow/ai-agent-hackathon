@@ -14,7 +14,7 @@ export type CodeBlockProps = {
     return (
       <div
       className={cn(
-        "not-prose flex w-full flex-col overflow-clip border", // overflow-clip untuk memastikan semuanya tetap di dalam border
+        "not-prose flex w-full flex-col overflow-clip border",
         "border-border bg-card text-card-foreground rounded-xl",
         className
       )}
@@ -53,10 +53,8 @@ export type CodeBlockCodeProps = {
       highlight()
     }, [code, language, appTheme])
     
-    // Diperbarui: Menambahkan overflow-x-auto
     const classNames = cn(
-      "w-full overflow-x-auto text-[13px] [&>pre]:py-4 [&>pre]:!bg-background",
-      // Mengubah padding horizontal agar diterapkan di sini, bukan di <pre>
+      "w-full overflow-x-auto text-[13px] [&>pre]:py-4",
       "px-4",
       className
     )
@@ -69,7 +67,7 @@ export type CodeBlockCodeProps = {
     />
     ) : (
       <div className={classNames} {...props}>
-      <pre className="!bg-transparent p-0"> {/* Hapus padding dari <pre> agar tidak dobel */}
+      <pre className="!bg-transparent p-0">
         <code>{code}</code>
       </pre>
     </div>

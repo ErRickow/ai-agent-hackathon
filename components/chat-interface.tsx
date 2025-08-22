@@ -17,6 +17,7 @@ import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ImageIcon } from "lucide-react";
+import { ButtonCopy } from "./button-copy"
 
 interface Message {
   id: string;
@@ -72,13 +73,7 @@ const markdownComponents = {
       <CodeBlock className="my-4 max-w-full">
         <CodeBlockGroup className="px-4 py-2 border-b border-border flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{language}</span>
-          <Button 
-            variant="ghost" 
-            size="sm"
-            onClick={() => navigator.clipboard.writeText(codeString)}
-          >
-            <Copy className="h-4 w-4" />
-          </Button>
+          <ButtonCopy code={codeString} />
         </CodeBlockGroup>
         <div className="overflow-x-auto">
           <CodeBlockCode 
