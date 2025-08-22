@@ -169,8 +169,7 @@ export default function ChatInterface({
         {messages.map((message) => (
           <div
             key={message.id}
-            // KEMBALIKAN LOGIKA FLEX DIRECTION
-            className={`flex gap-4 items-start ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+            className={`flex gap-4 items-start w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
             {/* AVATAR */}
             <div
@@ -188,11 +187,11 @@ export default function ChatInterface({
             </div>
 
             {/* MESSAGE CONTENT */}
-            <div className={`flex-1 space-y-1 min-w-0 max-w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
-              <div className="font-semibold text-sm">
+            <div className={`flex-1 space-y-1 min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div className={`font-semibold text-sm ${message.role === 'user' ? 'text-right' : 'text-left'} w-full`}>
                 {message.role === "user" ? "You" : selectedPersona.name}
               </div>
-              <div className="w-full break-words overflow-hidden">
+              <div className={`break-words overflow-hidden max-w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                 {message.type === "image" && message.imageUrl ? (
                   <div className="space-y-2 pt-2">
                     <img
@@ -210,7 +209,7 @@ export default function ChatInterface({
                     <p className="text-sm">{message.content}</p>
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto">
+                  <div className={`prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto ${message.role === 'assistant' ? 'text-left' : ''}`}>
                     <ReactMarkdown
                       components={markdownComponents}
                       remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
@@ -221,7 +220,7 @@ export default function ChatInterface({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+              <div className={`flex items-center gap-2 text-xs text-muted-foreground pt-1 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
                   <Badge variant="outline" className="text-xs">
@@ -235,16 +234,16 @@ export default function ChatInterface({
 
         {/* Streaming Message */}
         {streamingMessage && (
-          <div className="flex gap-4 items-start">
+          <div className="flex gap-4 items-start w-full">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1 space-y-1">
-               <div className="font-semibold text-sm">
+            <div className="flex-1 space-y-1 min-w-0 flex flex-col items-start">
+               <div className="font-semibold text-sm text-left w-full">
                 {selectedPersona.name}
               </div>
-              <div className="w-full break-words overflow-hidden">
-                <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto">
+              <div className="break-words overflow-hidden max-w-full text-left">
+                <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto text-left">
                   <ReactMarkdown
                     components={markdownComponents}
                     remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
@@ -260,12 +259,12 @@ export default function ChatInterface({
 
         {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
-          <div className="flex gap-4 items-start">
+          <div className="flex gap-4 items-start w-full">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1 space-y-2">
-                <div className="font-semibold text-sm">
+            <div className="flex-1 space-y-2 min-w-0 flex flex-col items-start">
+                <div className="font-semibold text-sm text-left w-full">
                     {selectedPersona.name}
                 </div>
                 <div className="flex items-center gap-2">
