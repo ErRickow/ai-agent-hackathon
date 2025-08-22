@@ -59,7 +59,7 @@ const predefinedPersonas: Persona[] = [
     id: "expert",
     name: "Intent Classifier",
     icon: <GraduationCap className="w-4 h-4" />,
-    systemPrompt: system,
+    systemPrompt: intent,
     description: "Profesional Classifier",
   },
   {
