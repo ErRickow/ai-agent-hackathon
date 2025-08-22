@@ -39,58 +39,7 @@ import {
 import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
 import { excel } from "@/lib/prompts/excel-expert"
-
-interface Persona {
-  id: string
-  name: string
-  icon: React.ReactNode
-  systemPrompt: string
-  description: string
-}
-
-const predefinedPersonas: Persona[] = [
-{
-  id: "assistant",
-  name: "AI Assistant",
-  icon: <Bot className="w-4 h-4" />,
-  systemPrompt: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
-  description: "General purpose helpful assistant",
-},
-{
-  id: "expert",
-  name: "Intent Classifier",
-  icon: <GraduationCap className="w-4 h-4" />,
-  systemPrompt: intent,
-  description: "Profesional Classifier",
-},
-{
-  id: "creative",
-  name: "Quiz Creator",
-  icon: <Palette className="w-4 h-4" />,
-  systemPrompt: quiz,
-  description: "Profesional Quiz Creator",
-},
-{
-  id: "business",
-  name: "Excel Expert",
-  icon: <Briefcase className="w-4 h-4" />,
-  systemPrompt: excel,
-  description: "Excel formulas tailored to their specific data analysis, calculation, or manipulation",
-},
-{
-  id: "coach",
-  name: "Life Coach",
-  icon: <Heart className="w-4 h-4" />,
-  systemPrompt: "You are a supportive life coach. Help users with personal development, motivation, and achieving their goals with empathy and encouragement.",
-  description: "Personal development and motivation",
-},
-{
-  id: "gaming",
-  name: "Gaming Buddy",
-  icon: <Gamepad2 className="w-4 h-4" />,
-  systemPrompt: "You are a gaming enthusiast and expert. Help users with game strategies, recommendations, and discuss gaming topics with enthusiasm.",
-  description: "Gaming expert and enthusiast",
-}, ]
+import { predefinedPersonas } from "./persona"
 
 interface Message {
   id: string
@@ -229,59 +178,51 @@ function AIAgent() {
     }
   }
   
-  const switchToChatMode = () => {
-    setAIMode("chat");
-    setTimeout(() => {
-      textareaRef.current?.focus();
-    }, 0);
-  };
+const generateImage = async () => {
+  if (!imagePrompt.trim() || isLoading) return
   
-  const generateImage = async () => {
-    if (!imagePrompt.trim() || isLoading) return
+  setIsLoading(true)
+  
+  try {
+    const response = await fetch("/api/image", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ prompt: imagePrompt, provider }),
+    })
     
-    setIsLoading(true)
+    const data = await response.json()
     
-    try {
-      const response = await fetch("/api/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, provider }),
-      })
-      
-      const data = await response.json()
-      
-      if (!response.ok) {
-        // Throw an error to be caught below
-        throw new Error(data.error || "Failed to generate image")
-      }
-      
-      const imageMessage: Message = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `Generated image: "${imagePrompt}"`,
-        timestamp: new Date(),
-        provider,
-        type: "image",
-        imageUrl: data.imageUrl,
-      }
-      
-      setMessages((prev) => [...prev, imageMessage])
-      setImagePrompt("")
-      switchToChatMode()
-    } catch (error) {
-      console.error("Image generation error:", error)
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: `Error: ${error.message || "Failed to generate image."}`,
-        timestamp: new Date(),
-        provider,
-      }
-      setMessages((prev) => [...prev, errorMessage])
-    } finally {
-      setIsLoading(false)
+    if (!response.ok) {
+      // Throw an error to be caught below
+      throw new Error(data.error || "Failed to generate image")
     }
+    
+    const imageMessage: Message = {
+      id: Date.now().toString(),
+      role: "assistant",
+      content: `Generated image: "${imagePrompt}"`,
+      timestamp: new Date(),
+      provider,
+      type: "image",
+      imageUrl: data.imageUrl,
+    }
+    
+    setMessages((prev) => [...prev, imageMessage])
+    setImagePrompt("")
+  } catch (error) {
+    console.error("Image generation error:", error)
+    const errorMessage: Message = {
+      id: (Date.now() + 1).toString(),
+      role: "assistant",
+      content: `Error: ${error.message || "Failed to generate image."}`,
+      timestamp: new Date(),
+      provider,
+    }
+    setMessages((prev) => [...prev, errorMessage])
+  } finally {
+    setIsLoading(false)
   }
+}
   
   const generateSpeech = async () => {
     if (!ttsText.trim() || isLoading) return
@@ -442,8 +383,6 @@ function AIAgent() {
         return "Text Embeddings"
     }
   }
-  
-
   
   return (
     <TooltipProvider>
@@ -878,15 +817,15 @@ function AIAgent() {
                 {/* Chat Input */}
                 <div className="p-4 border-t border-border">
                   <div className="flex gap-2 max-w-4xl mx-auto">
-                  <Textarea
-                    ref={textareaRef}
-                    value={input}
-                    onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={handleKeyPress}
-                    placeholder={`Chat with ${useCustomPrompt ? "Custom AI" : selectedPersona.name}...`}
-                    className="min-h-[60px] resize-none font-mono"
-                    disabled={isLoading}
-                  />
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  placeholder={`Chat with ${useCustomPrompt ? "Custom AI" : selectedPersona.name}...`}
+                  className="min-h-[60px] resize-none font-mono"
+                  disabled={isLoading}
+                />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="lg" className="px-4">
