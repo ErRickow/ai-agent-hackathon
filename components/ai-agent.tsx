@@ -38,6 +38,7 @@ import {
 } from "lucide-react"
 import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
+import { excel } from "@/lib/prompts/excel-expert"
 
 interface Persona {
   id: string
@@ -71,10 +72,10 @@ const predefinedPersonas: Persona[] = [
 },
 {
   id: "business",
-  name: "Business Advisor",
+  name: "Excel Expert",
   icon: <Briefcase className="w-4 h-4" />,
-  systemPrompt: "You are a business advisor with expertise in strategy, marketing, and entrepreneurship. Provide practical business advice and insights.",
-  description: "Business strategy and advice",
+  systemPrompt: excel,
+  description: "Excel formulas tailored to their specific data analysis, calculation, or manipulation",
 },
 {
   id: "coach",
