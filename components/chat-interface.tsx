@@ -1,25 +1,11 @@
-"use client";
-
 import * as React from "react";
+import { ScrollShadow } from "@heroui/react";
+import { Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, Loader2, Bot } from "lucide-react";
+import { Send, Loader2, Bot, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import {
-  ChatContainerRoot,
-  ChatContainerContent,
-  ChatContainerScrollAnchor,
-} from "./chat-container";
-import {
-  Message as MessageContainer,
-  MessageAvatar,
-  MessageContent
-} from "./prompt-kit/message";
-import { MessageUser } from "./prompt-kit/message-user";
-import { MessageAssistant } from "./prompt-kit/message-assistant";
-import { cn } from "@/lib/utils";
-import { PromptInput, PromptInputTextarea, PromptInputActions, PromptInputAction } from "./prompt-kit/prompt-input";
-import { Textarea } from "@/components/ui/textarea";
+import { Markdown } from "./markdown"
 
 interface Message {
   id: string;
@@ -62,11 +48,16 @@ export default function ChatInterface({
   handleKeyPress,
 }: ChatInterfaceProps) {
   const messagesEndRef = React.useRef < HTMLDivElement > (null);
+  const textareaRef = React.useRef < HTMLTextAreaElement > (null);
+  
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingMessage]);
   
   return (
     <>
-      <ChatContainerRoot className="flex-1 p-4 w-full h-auto max-h-[1000px] lg:max-h-full">
-        <ChatContainerContent className="space-y-4 max-w-4xl mx-auto">
+      <ScrollShadow className="flex-1 p-4 w-full h-auto max-h-[1000px] lg:max-h-full">
+        <div className="space-y-4 max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-12">
               <div className="flex items-center justify-center gap-2 mb-4">
@@ -78,51 +69,131 @@ export default function ChatInterface({
             </div>
           )}
           {messages.map((message) => (
-            message.role === "user" ? (
-              <MessageUser key={message.id} id={message.id} children={message.content} />
-            ) : (
-              <MessageAssistant key={message.id} children={message.content} selectedPersona={selectedPersona} />
-            )
+            <div
+              key={message.id}
+              className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`flex gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className="flex-shrink-0">
+                  {message.role === "user" ? (
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                      {selectedPersona.icon}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className={`rounded-lg p-4 ${
+                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  <div className="prose dark:prose-invert">
+                    <Markdown>
+                      {message.content}
+                    </Markdown>
+                  </div>
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl || "/placeholder.svg"}
+                      alt="Generated"
+                      className="mt-3 rounded-lg max-w-full h-auto"
+                    />
+                  )}
+                  {message.audioUrl && (
+                    <audio controls className="mt-3 w-full">
+                      <source src={message.audioUrl} type="audio/mpeg" />
+                    </audio>
+                  )}
+                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
+                    <span>{message.timestamp.toLocaleTimeString()}</span>
+                    {message.provider && (
+                      <Badge variant="outline" className="text-xs">
+                        {message.provider}
+                      </Badge>
+                    )}
+                    {message.type && message.type !== "text" && (
+                      <Badge variant="secondary" className="text-xs">
+                        {message.type}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
           ))}
           {streamingMessage && (
-            <MessageContainer key="streaming-message" className={cn("group flex w-full max-w-3xl flex-1 items-start gap-4 px-6 pb-2")}>
-              <div className="flex flex-row items-start gap-3 justify-start">
-                <MessageAvatar
-                  fallback={selectedPersona.icon || <Bot />}
-                  alt={selectedPersona.name || "Assistant"}
-                />
-                <MessageContent
-                  className="bg-secondary prose dark:prose-invert relative max-w-[70%] rounded-3xl px-5 py-2.5"
-                  markdown={true}
-                >
-                  {streamingMessage}
-                </MessageContent>
+            <div className="flex gap-3 justify-start">
+              <div className="flex gap-3 max-w-[80%]">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                    {selectedPersona.icon}
+                  </div>
+                </div>
+                <div className="rounded-lg p-4 bg-secondary text-secondary-foreground">
+                  <div className="prose dark:prose-invert">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        code(props) {
+                          const { children, className, node, ...rest } = props;
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match ? (
+                            <SyntaxHighlighter
+                              {...rest}
+                              PreTag="div"
+                              language={match[1]}
+                              style={vscDarkPlus}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code {...rest} className={className}>
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {streamingMessage}
+                    </ReactMarkdown>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
+                    <Badge variant="outline" className="text-xs">
+                      {provider}
+                    </Badge>
+                    <span>streaming...</span>
+                  </div>
+                </div>
               </div>
-            </MessageContainer>
+            </div>
           )}
-        </ChatContainerContent>
-        <ChatContainerScrollAnchor ref={messagesEndRef} />
-      </ChatContainerRoot>
+        </div>
+        <div ref={messagesEndRef} />
+      </ScrollShadow>
       <div className="p-4 border-t border-border">
         <div className="flex gap-2 max-w-4xl mx-auto">
-          <PromptInput
-            isLoading={isLoading}
+          <Textarea
             value={input}
-            onValueChange={setInput}
-            onSubmit={sendMessage}
-          >
-            <PromptInputActions>
-              <PromptInputTextarea
-                onKeyDown={handleKeyPress}
-                placeholder={`ask ${selectedPersona.name}...`}
-              />
-              <PromptInputAction tooltip="Kirim Pesan">
-                <Button variant="ghost" className="h-10 w-10">
-                  {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
-                </Button>
-              </PromptInputAction>
-            </PromptInputActions>
-          </PromptInput>
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={`ask ${selectedPersona.name}...`}
+            className="min-h-[60px] resize-none font-mono"
+            isDisabled={isLoading}
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="lg" className="px-4">
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Kirim Pesan</p>
+            </TooltipContent>
+          </Tooltip>
         </div>
       </div>
     </>
