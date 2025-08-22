@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
     if (provider === "lunos") {
       const client = new LunosClient({
         apiKey: process.env.LUNOS_KEY,
+        baseURL: "https://api.lunos.tech/v1",
         appId: "er-project",
       })
       
