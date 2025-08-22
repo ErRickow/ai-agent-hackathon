@@ -14,9 +14,8 @@ export type CodeBlockProps = {
     return (
       <div
       className={cn(
-        "not-prose flex w-full flex-col overflow-hidden border",
+        "not-prose flex h-full flex-col overflow-hidden border",
         "border-border bg-card text-card-foreground rounded-xl",
-        "max-w-full",
         className
       )}
       {...props}
@@ -104,7 +103,6 @@ export type CodeBlockGroupProps = React.HTMLAttributes < HTMLDivElement >
         "border-b border-border bg-muted/30",
         "text-sm text-muted-foreground",
         "font-medium",
-        "min-h-[44px]",
         className
       )}
       {...props}
