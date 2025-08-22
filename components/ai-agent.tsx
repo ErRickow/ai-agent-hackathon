@@ -233,6 +233,7 @@ function AIAgent() {
     if (!imagePrompt.trim() || isLoading) return
     
     setIsLoading(true)
+    
     try {
       const response = await fetch("/api/image", {
         method: "POST",
@@ -241,6 +242,11 @@ function AIAgent() {
       })
       
       const data = await response.json()
+      
+      if (!response.ok) {
+        // Throw an error to be caught below
+        throw new Error(data.error || "Failed to generate image")
+      }
       
       const imageMessage: Message = {
         id: Date.now().toString(),
@@ -256,6 +262,14 @@ function AIAgent() {
       setImagePrompt("")
     } catch (error) {
       console.error("Image generation error:", error)
+      const errorMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `Error: ${error.message || "Failed to generate image."}`,
+        timestamp: new Date(),
+        provider,
+      }
+      setMessages((prev) => [...prev, errorMessage])
     } finally {
       setIsLoading(false)
     }
