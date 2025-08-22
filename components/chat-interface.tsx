@@ -1,0 +1,171 @@
+import * as React from "react";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { Send, Loader2, Bot, User } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+interface Message {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+  timestamp: Date;
+  provider ? : "lunos" | "unli";
+  type ? : "text" | "image" | "audio" | "embedding";
+  imageUrl ? : string;
+  audioUrl ? : string;
+}
+
+interface ChatInterfaceProps {
+  messages: Message[];
+  streamingMessage: string;
+  selectedPersona: {
+    id: string;
+    name: string;
+    icon: React.ReactNode;
+    systemPrompt: string;
+    description: string;
+  };
+  provider: "lunos" | "unli";
+  isLoading: boolean;
+  input: string;
+  setInput: (input: string) => void;
+  sendMessage: () => void;
+  handleKeyPress: (e: React.KeyboardEvent) => void;
+}
+
+export default function ChatInterface({
+  messages,
+  streamingMessage,
+  selectedPersona,
+  provider,
+  isLoading,
+  input,
+  setInput,
+  sendMessage,
+  handleKeyPress,
+}: ChatInterfaceProps) {
+  const messagesEndRef = React.useRef < HTMLDivElement > (null);
+  
+  React.useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingMessage]);
+  
+  return (
+    <>
+      <ScrollArea className="flex-1 p-4">
+        <div className="space-y-4 max-w-4xl mx-auto">
+          {messages.length === 0 && (
+            <div className="text-center text-muted-foreground py-12">
+              <div className="flex items-center justify-center gap-2 mb-4">
+                {selectedPersona.icon}
+                <Bot className="w-12 h-12 opacity-50" />
+              </div>
+              <p className="font-semibold text-lg">AI Assistant Ready</p>
+              <p className="text-sm mt-2 max-w-md mx-auto">{selectedPersona.description}</p>
+            </div>
+          )}
+          {messages.map((message) => (
+            <div
+              key={message.id}
+              className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+            >
+              <div className={`flex gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
+                <div className="flex-shrink-0">
+                  {message.role === "user" ? (
+                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
+                      <User className="w-4 h-4 text-primary-foreground" />
+                    </div>
+                  ) : (
+                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                      {selectedPersona.icon}
+                    </div>
+                  )}
+                </div>
+                <div
+                  className={`rounded-lg p-4 ${
+                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
+                  }`}
+                >
+                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{message.content}</div>
+                  {message.imageUrl && (
+                    <img
+                      src={message.imageUrl || "/placeholder.svg"}
+                      alt="Generated"
+                      className="mt-3 rounded-lg max-w-full h-auto"
+                    />
+                  )}
+                  {message.audioUrl && (
+                    <audio controls className="mt-3 w-full">
+                      <source src={message.audioUrl} type="audio/mpeg" />
+                    </audio>
+                  )}
+                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
+                    <span>{message.timestamp.toLocaleTimeString()}</span>
+                    {message.provider && (
+                      <Badge variant="outline" className="text-xs">
+                        {message.provider}
+                      </Badge>
+                    )}
+                    {message.type && message.type !== "text" && (
+                      <Badge variant="secondary" className="text-xs">
+                        {message.type}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+          {streamingMessage && (
+            <div className="flex gap-3 justify-start">
+              <div className="flex gap-3 max-w-[80%]">
+                <div className="flex-shrink-0">
+                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
+                    {selectedPersona.icon}
+                  </div>
+                </div>
+                <div className="rounded-lg p-4 bg-secondary text-secondary-foreground">
+                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
+                    {streamingMessage}
+                    <span className="animate-pulse">▋</span>
+                  </div>
+                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
+                    <Badge variant="outline" className="text-xs">
+                      {provider}
+                    </Badge>
+                    <span>streaming...</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+        <div ref={messagesEndRef} />
+      </ScrollArea>
+      <div className="p-4 border-t border-border">
+        <div className="flex gap-2 max-w-4xl mx-auto">
+          <Textarea
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyPress={handleKeyPress}
+            placeholder={`Chat with ${selectedPersona.name}...`}
+            className="min-h-[60px] resize-none font-mono"
+            disabled={isLoading}
+          />
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="lg" className="px-4">
+                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Send message (Enter)</p>
+            </TooltipContent>
+          </Tooltip>
+        </div>
+      </div>
+    </>
+  );
+}
