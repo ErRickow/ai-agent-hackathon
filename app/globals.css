@@ -153,3 +153,58 @@
   word-break: break-all;
   white-space: pre-wrap;
 }
+
+/* Chat interface layout fixes */
+.chat-messages {
+  overflow-x: hidden; /* Mencegah horizontal scroll di container utama */
+}
+
+/* Prose styling untuk chat messages */
+.prose {
+  /* Reset text alignment untuk assistant messages */
+  text-align: left !important;
+}
+
+.prose.user-message {
+  text-align: right !important;
+}
+
+/* Memastikan code blocks tidak melebihi container */
+.prose pre {
+  max-width: 100% !important;
+  overflow-x: auto !important;
+}
+
+/* Memastikan tables responsive */
+.prose table {
+  display: block;
+  overflow-x: auto;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+/* Fix untuk inline code */
+.prose code {
+  word-break: break-word;
+}
+
+/* Memastikan semua child elements tidak melebihi container */
+.prose > * {
+  max-width: 100%;
+}
+
+/* LaTeX equations responsive */
+.katex-display {
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Scrollbar untuk LaTeX yang panjang */
+.katex-display::-webkit-scrollbar {
+  height: 4px;
+}
+
+.katex-display::-webkit-scrollbar-thumb {
+  background-color: hsl(var(--border));
+  border-radius: 2px;
+}
