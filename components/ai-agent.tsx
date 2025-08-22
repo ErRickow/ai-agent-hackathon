@@ -1,29 +1,20 @@
 "use client";
 
 import type React from "react";
-import { useState, useRef, useEffect } from "react";
+import { useState } from "react";
 import {
-  Send,
   Bot,
-  User,
-  Loader2,
-  Zap,
-  ImageIcon,
-  Mic,
-  Eye,
   Code2,
-  Settings,
-  Briefcase,
-  Heart,
-  Gamepad2,
-  GraduationCap,
-  Palette,
+  Cpu,
+  Eye,
+  Globe,
+  ImageIcon,
   Menu,
   MessageSquare,
-  Cpu,
-  Globe,
-  Volume2,
+  Mic,
   RotateCcw,
+  Volume2,
+  Zap,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -77,6 +68,9 @@ function AIAgent() {
       timestamp: new Date(),
     };
 
+    const currentInput = input.trim();
+    const messageHistory = [...messages];
+
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
@@ -90,10 +84,10 @@ function AIAgent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: input.trim(),
+          message: currentInput,
           provider,
           systemPrompt,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          messages: messageHistory.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
@@ -111,13 +105,13 @@ function AIAgent() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value);
+          const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n");
 
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const data = line.slice(6);
-              if (data === "[DONE]") {
+              if (data.trim() === "[DONE]") {
                 break;
               }
               try {
@@ -127,15 +121,15 @@ function AIAgent() {
                   setStreamingMessage(fullResponse);
                 }
               } catch (e) {
-                console.error("Failed to parse JSON chunk:", e, "Chunk:", data);
+                // Ignore empty or invalid JSON chunks
               }
             }
           }
         }
       }
-
+      
       const finalResponseContent = fullResponse.trim() || "Tidak ada jawaban yang diterima dari AI.";
-
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -143,10 +137,9 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
       };
-      setMessages((prevMessages) => [...prevMessages, assistantMessage]);
-      setStreamingMessage("");
+      setMessages((prev) => [...prev, assistantMessage]);
 
-    } catch (error) {
+    } catch (error: any) {
       console.error("Error sending message:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
@@ -155,8 +148,9 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
       };
-      setMessages((prevMessages) => [...prevMessages, errorMessage]);
+      setMessages((prev) => [...prev, errorMessage]);
     } finally {
+      setStreamingMessage("");
       setIsLoading(false);
     }
   };
@@ -306,7 +300,7 @@ function AIAgent() {
       setIsLoading(false);
     }
   };
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -323,37 +317,7 @@ function AIAgent() {
       }
     }
   };
-
-  const getModeIcon = (mode: AIMode) => {
-    switch (mode) {
-      case "chat":
-        return <MessageSquare className="w-4 h-4" />;
-      case "image":
-        return <ImageIcon className="w-4 h-4" />;
-      case "vision":
-        return <Eye className="w-4 h-4" />;
-      case "tts":
-        return <Mic className="w-4 h-4" />;
-      case "embedding":
-        return <Code2 className="w-4 h-4" />;
-    }
-  };
-
-  const getModeTitle = (mode: AIMode) => {
-    switch (mode) {
-      case "chat":
-        return "Chat";
-      case "image":
-        return "Image Generation";
-      case "vision":
-        return "Vision Analysis";
-      case "tts":
-        return "Text to Speech";
-      case "embedding":
-        return "Text Embeddings";
-    }
-  };
-
+  
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground">
@@ -434,7 +398,7 @@ function AIAgent() {
               </div>
             </div>
           </header>
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col overflow-hidden">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}
