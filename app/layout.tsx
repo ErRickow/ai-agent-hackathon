@@ -34,7 +34,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <TanstackQueryProvider>
           <LayoutClient />
-            <div className="flex overflow-hidden">
+            <div className="flex">
               {children}
             </div>
         </TanstackQueryProvider>
