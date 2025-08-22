@@ -10,6 +10,9 @@ import { CodeBlock, CodeBlockCode, CodeBlockGroup } from "@/components/code-bloc
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -66,23 +69,23 @@ const markdownComponents = {
     }
     
     return (
-      <CodeBlock className="my-4 w-full overflow-hidden">
-        <CodeBlockGroup className="px-2 sm:px-4 py-2 border-b border-border">
-          <span className="text-xs sm:text-sm text-muted-foreground">{language}</span>
+      <CodeBlock className="my-4 max-w-full">
+        <CodeBlockGroup className="px-4 py-2 border-b border-border flex items-center justify-between">
+          <span className="text-sm text-muted-foreground">{language}</span>
           <Button 
             variant="ghost" 
             size="sm"
-            className="h-6 w-6 sm:h-8 sm:w-8"
             onClick={() => navigator.clipboard.writeText(codeString)}
           >
-            <Copy className="h-3 w-3 sm:h-4 sm:w-4" />
+            <Copy className="h-4 w-4" />
           </Button>
         </CodeBlockGroup>
-        <CodeBlockCode 
-          code={codeString} 
-          language={language}
-          className="text-xs sm:text-sm"
-        />
+        <div className="overflow-x-auto">
+          <CodeBlockCode 
+            code={codeString} 
+            language={language}
+          />
+        </div>
       </CodeBlock>
     );
   },
@@ -137,28 +140,26 @@ export default function ChatInterface({
   
   const userTextColor = getContrastingTextColor(selectedPersona.color);
   
+  // Function to get loading text based on mode
+  const getLoadingText = () => {
+    return isImageGenMode ? "Membuat gambar..." : "Berpikir...";
+  };
+  
   return (
-    <div className="flex flex-col h-full w-full">
+    <>
       {/* Messages Area */}
-      <div 
-        ref={messagesContainerRef} 
-        className="flex-1 overflow-y-auto p-2 sm:p-4 space-y-4 sm:space-y-6"
-      >
+      <div ref={messagesContainerRef} className="flex-1 w-full h-full overflow-y-auto p-4 space-y-6">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 p-4">
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div 
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+              className="w-16 h-16 rounded-full flex items-center justify-center"
               style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
             >
-              <div className="scale-75 sm:scale-100">
-                {selectedPersona.icon}
-              </div>
+              {selectedPersona.icon}
             </div>
-            <div className="space-y-2 max-w-sm sm:max-w-md">
-              <h3 className="text-lg sm:text-xl font-semibold">
-                Mulai percakapan dengan {selectedPersona.name}
-              </h3>
-              <p className="text-sm sm:text-base text-muted-foreground">
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
+              <p className="text-muted-foreground max-w-md">
                 {selectedPersona.description}
               </p>
             </div>
@@ -168,73 +169,61 @@ export default function ChatInterface({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-2 sm:gap-4 items-start ${
-              message.role === 'user' ? 'flex-row-reverse' : 'flex-row'
-            }`}
+            className={`flex gap-4 items-start w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
             {/* AVATAR */}
             <div
-              className="w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1"
+              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1`}
               style={{
                 backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
                 color: message.role === 'user' ? userTextColor : 'var(--muted-foreground)',
               }}
             >
               {message.role === "user" ? (
-                <User className="w-3 h-3 sm:w-4 sm:h-4" />
+                <User className="w-4 h-4" />
               ) : (
-                <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+                <Bot className="w-4 h-4" />
               )}
             </div>
 
             {/* MESSAGE CONTENT */}
-            <div 
-              className={`flex-1 space-y-1 min-w-0 max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)] ${
-                message.role === 'user' ? 'text-right' : 'text-left'
-              }`}
-            >
-              <div className="font-semibold text-xs sm:text-sm">
+            <div className={`flex-1 space-y-1 min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div className={`font-semibold text-sm ${message.role === 'user' ? 'text-right' : 'text-left'} w-full`}>
                 {message.role === "user" ? "You" : selectedPersona.name}
               </div>
-              <div className="w-full break-words overflow-hidden">
+              <div className={`break-words overflow-hidden max-w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                 {message.type === "image" && message.imageUrl ? (
                   <div className="space-y-2 pt-2">
                     <img
                       src={message.imageUrl}
                       alt="Generated"
-                      className={`rounded-lg w-full max-w-xs sm:max-w-sm h-auto ${
-                        message.role === 'user' ? 'ml-auto' : 'mr-auto'
-                      }`}
+                      className={`rounded-lg max-w-full sm:max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
                     />
-                    <p className="text-xs sm:text-sm">{message.content}</p>
+                    <p className="text-sm">{message.content}</p>
                   </div>
                 ) : message.type === "audio" && message.audioUrl ? (
                   <div className="space-y-2 pt-2">
-                    <audio 
-                      controls 
-                      className={`w-full max-w-xs sm:max-w-sm ${
-                        message.role === 'user' ? 'ml-auto' : 'mr-auto'
-                      }`}
-                    >
+                    <audio controls className={`w-full max-w-sm ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}>
                       <source src={message.audioUrl} type="audio/mpeg" />
                     </audio>
-                    <p className="text-xs sm:text-sm">{message.content}</p>
+                    <p className="text-sm">{message.content}</p>
                   </div>
                 ) : (
-                  <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert overflow-hidden">
+                  <div className={`prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto ${message.role === 'assistant' ? 'text-left' : ''}`}>
                     <ReactMarkdown
                       components={markdownComponents}
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
                     >
                       {message.content}
                     </ReactMarkdown>
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1 flex-wrap">
+              <div className={`flex items-center gap-2 text-xs text-muted-foreground pt-1 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
-                  <Badge variant="outline" className="text-xs h-4 px-1.5">
+                  <Badge variant="outline" className="text-xs">
                     {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
                   </Badge>
                 )}
@@ -245,19 +234,20 @@ export default function ChatInterface({
 
         {/* Streaming Message */}
         {streamingMessage && (
-          <div className="flex gap-2 sm:gap-4 items-start">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-              <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="flex gap-4 items-start w-full">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+              <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1 space-y-1 min-w-0 max-w-[calc(100%-2rem)] sm:max-w-[calc(100%-3rem)]">
-               <div className="font-semibold text-xs sm:text-sm">
+            <div className="flex-1 space-y-1 min-w-0 flex flex-col items-start">
+               <div className="font-semibold text-sm text-left w-full">
                 {selectedPersona.name}
               </div>
-              <div className="w-full break-words overflow-hidden">
-                <div className="prose prose-xs sm:prose-sm max-w-none dark:prose-invert">
+              <div className="break-words overflow-hidden max-w-full text-left">
+                <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto text-left">
                   <ReactMarkdown
                     components={markdownComponents}
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
                   >
                     {streamingMessage}
                   </ReactMarkdown>
@@ -269,52 +259,47 @@ export default function ChatInterface({
 
         {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
-          <div className="flex gap-2 sm:gap-4 items-start">
-            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-              <Bot className="w-3 h-3 sm:w-4 sm:h-4" />
+          <div className="flex gap-4 items-start w-full">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+              <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1 space-y-2">
-                <div className="font-semibold text-xs sm:text-sm">
+            <div className="flex-1 space-y-2 min-w-0 flex flex-col items-start">
+                <div className="font-semibold text-sm text-left w-full">
                     {selectedPersona.name}
                 </div>
                 <div className="flex items-center gap-2">
-                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                  <span className="text-xs sm:text-sm text-muted-foreground">Berpikir...</span>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm text-muted-foreground">{getLoadingText()}</span>
                 </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 space-y-3">
-        <div className="flex items-center space-x-2">
+              {/* Input Area */}
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 space-y-3 w-full">
+        <div className="flex items-center space-x-2 flex-wrap">
           <Switch
             id="image-generation-mode"
             checked={isImageGenMode}
             onCheckedChange={onImageGenToggle}
-            className="scale-75 sm:scale-100"
           />
-          <Label 
-            htmlFor="image-generation-mode" 
-            className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-muted-foreground cursor-pointer"
-          >
-            <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
-            <span className="hidden xs:inline">Image Generation Mode</span>
-            <span className="xs:hidden">Image Mode</span>
+          <Label htmlFor="image-generation-mode" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <ImageIcon className="h-4 w-4" />
+            <span>Image</span>
           </Label>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={
               isImageGenMode 
-                ? "Describe the image you want to generate..." 
+                ? "Describe the image you..." 
                 : "Type your message..."
             }
-            className="flex-1 min-h-[40px] sm:min-h-[44px] max-h-32 resize-none text-sm sm:text-base"
+            className="flex-1 min-h-[44px] max-h-32 resize-none"
             disabled={isLoading}
           />
           <Tooltip>
@@ -323,12 +308,12 @@ export default function ChatInterface({
                 onClick={sendMessage}
                 disabled={!input.trim() || isLoading}
                 size="icon"
-                className="shrink-0 h-[40px] w-[40px] sm:h-[44px] sm:w-[44px]"
+                className="shrink-0"
               >
                 {isLoading ? (
-                  <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                  <Loader2 className="w-4 h-4 animate-spin" />
                 ) : (
-                  <Send className="w-3 h-3 sm:w-4 sm:h-4" />
+                  <Send className="w-4 h-4" />
                 )}
               </Button>
             </TooltipTrigger>
@@ -338,6 +323,6 @@ export default function ChatInterface({
           </Tooltip>
         </div>
       </div> 
-    </div>
+    </>
   );
 }
