@@ -10,6 +10,9 @@ import { CodeBlock, CodeBlockCode, CodeBlockGroup } from "@/components/code-bloc
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
+import remarkMath from "remark-math";
+import rehypeKatex from "rehype-katex";
+import "katex/dist/katex.min.css";
 import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
@@ -66,8 +69,8 @@ const markdownComponents = {
     }
     
     return (
-      <CodeBlock className="my-4">
-        <CodeBlockGroup className="px-4 py-2 border-b border-border">
+      <CodeBlock className="my-4 max-w-full">
+        <CodeBlockGroup className="px-4 py-2 border-b border-border flex items-center justify-between">
           <span className="text-sm text-muted-foreground">{language}</span>
           <Button 
             variant="ghost" 
@@ -77,10 +80,12 @@ const markdownComponents = {
             <Copy className="h-4 w-4" />
           </Button>
         </CodeBlockGroup>
-        <CodeBlockCode 
-          code={codeString} 
-          language={language}
-        />
+        <div className="overflow-x-auto">
+          <CodeBlockCode 
+            code={codeString} 
+            language={language}
+          />
+        </div>
       </CodeBlock>
     );
   },
@@ -135,11 +140,15 @@ export default function ChatInterface({
   
   const userTextColor = getContrastingTextColor(selectedPersona.color);
   
+  // Function to get loading text based on mode
+  const getLoadingText = () => {
+    return isImageGenMode ? "Membuat gambar..." : "Berpikir...";
+  };
+  
   return (
     <>
-      <div className="flex flex-col h-full">
       {/* Messages Area */}
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
+      <div ref={messagesContainerRef} className="flex-1 w-full h-full overflow-y-auto p-4 space-y-6">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div 
@@ -179,19 +188,17 @@ export default function ChatInterface({
             </div>
 
             {/* MESSAGE CONTENT */}
-            <div className={`flex-1 space-y-1 min-w0 ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+            <div className={`flex-1 space-y-1 min-w-0 max-w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
               <div className="font-semibold text-sm">
                 {message.role === "user" ? "You" : selectedPersona.name}
               </div>
-              <div
-                className={`w-full break-words`}
-              >
+              <div className="w-full break-words overflow-hidden">
                 {message.type === "image" && message.imageUrl ? (
                   <div className="space-y-2 pt-2">
                     <img
                       src={message.imageUrl}
                       alt="Generated"
-                      className={`rounded-lg max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
+                      className={`rounded-lg max-w-full sm:max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
                     />
                     <p className="text-sm">{message.content}</p>
                   </div>
@@ -203,10 +210,11 @@ export default function ChatInterface({
                     <p className="text-sm">{message.content}</p>
                   </div>
                 ) : (
-                  <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto">
                     <ReactMarkdown
                       components={markdownComponents}
-                      remarkPlugins={[remarkGfm, remarkBreaks]}
+                      remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
                     >
                       {message.content}
                     </ReactMarkdown>
@@ -235,11 +243,12 @@ export default function ChatInterface({
                <div className="font-semibold text-sm">
                 {selectedPersona.name}
               </div>
-              <div className="w-full break-words">
-                <div className="prose prose-sm max-w-none dark:prose-invert">
+              <div className="w-full break-words overflow-hidden">
+                <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto">
                   <ReactMarkdown
                     components={markdownComponents}
-                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                    remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
+                    rehypePlugins={[rehypeKatex]}
                   >
                     {streamingMessage}
                   </ReactMarkdown>
@@ -261,16 +270,16 @@ export default function ChatInterface({
                 </div>
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">Berpikir...</span>
+                  <span className="text-sm text-muted-foreground">{getLoadingText()}</span>
                 </div>
             </div>
           </div>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 space-y-3">
-        <div className="flex items-center space-x-2">
+              {/* Input Area */}
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 space-y-3 w-full">
+        <div className="flex items-center space-x-2 flex-wrap">
           <Switch
             id="image-generation-mode"
             checked={isImageGenMode}
@@ -278,17 +287,17 @@ export default function ChatInterface({
           />
           <Label htmlFor="image-generation-mode" className="flex items-center gap-2 text-sm text-muted-foreground">
             <ImageIcon className="h-4 w-4" />
-            <span>Image Generation Mode</span>
+            <span>Image</span>
           </Label>
         </div>
-        <div className="flex gap-2">
+        <div className="flex gap-2 w-full">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
             placeholder={
               isImageGenMode 
-                ? "Describe the image you want to generate..." 
+                ? "Describe the image you..." 
                 : "Type your message..."
             }
             className="flex-1 min-h-[44px] max-h-32 resize-none"
@@ -315,7 +324,6 @@ export default function ChatInterface({
           </Tooltip>
         </div>
       </div> 
-      </div>
     </>
   );
 }

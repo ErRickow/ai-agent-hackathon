@@ -18,7 +18,7 @@ import {
   Gamepad2,
   GraduationCap,
   Palette,
-  Menu,
+  PanelLeftClose,
   MessageSquare,
   Globe,
   Volume2,
@@ -429,12 +429,12 @@ function AIAgent() {
           selectedModel = { selectedModel }
           setSelectedModel = { setSelectedModel }
         />
-        <div className="flex-1 flex flex-col overflow-hidden">
+        <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">
             <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
                 <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
-                  <Menu className="w-5 h-5" />
+                  <PanelLeftClose className="w-5 h-5" />
                 </Button>
                 <div className="flex items-center gap-2">
                   {getModeIcon(aiMode)}
@@ -472,7 +472,7 @@ function AIAgent() {
               </div>
             </div>
           </header>
-          <div className="flex-1 flex flex-col min-h-0">
+          <div className="flex-1 flex flex-col">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}

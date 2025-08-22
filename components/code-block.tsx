@@ -14,8 +14,9 @@ export type CodeBlockProps = {
     return (
       <div
       className={cn(
-        "not-prose flex w-full flex-col overflow-clip border", // overflow-clip untuk memastikan semuanya tetap di dalam border
+        "not-prose flex w-full flex-col overflow-hidden border",
         "border-border bg-card text-card-foreground rounded-xl",
+        "max-w-full",
         className
       )}
       {...props}
@@ -44,20 +45,32 @@ export type CodeBlockCodeProps = {
     
     useEffect(() => {
       async function highlight() {
-        const html = await codeToHtml(code, {
-          lang: language,
-          theme: appTheme === "dark" ? "github-dark" : "github-light",
-        })
-        setHighlightedHtml(html)
+        try {
+          const html = await codeToHtml(code, {
+            lang: language,
+            theme: appTheme === "dark" ? "github-dark" : "github-light",
+          })
+          setHighlightedHtml(html)
+        } catch (error) {
+          // Fallback jika language tidak dikenali
+          console.warn(`Language "${language}" not supported, falling back to text`)
+          const html = await codeToHtml(code, {
+            lang: "text",
+            theme: appTheme === "dark" ? "github-dark" : "github-light",
+          })
+          setHighlightedHtml(html)
+        }
       }
       highlight()
     }, [code, language, appTheme])
     
-    // Diperbarui: Menambahkan overflow-x-auto
     const classNames = cn(
-      "w-full overflow-x-auto text-[13px] [&>pre]:py-4 [&>pre]:!bg-background",
-      // Mengubah padding horizontal agar diterapkan di sini, bukan di <pre>
-      "px-4",
+      "w-full overflow-x-auto text-[13px] leading-relaxed",
+      "scrollbar-thin scrollbar-track-transparent scrollbar-thumb-border",
+      "px-4 py-3",
+      "[&>pre]:!m-0 [&>pre]:!p-0 [&>pre]:!bg-transparent [&>pre]:overflow-x-visible",
+      "[&>pre]:font-mono [&_code]:font-mono",
+      "[&>pre]:leading-relaxed [&_code]:leading-relaxed",
       className
     )
     
@@ -69,8 +82,8 @@ export type CodeBlockCodeProps = {
     />
     ) : (
       <div className={classNames} {...props}>
-      <pre className="!bg-transparent p-0"> {/* Hapus padding dari <pre> agar tidak dobel */}
-        <code>{code}</code>
+      <pre className="!m-0 !p-0 !bg-transparent font-mono leading-relaxed">
+        <code className="font-mono">{code}</code>
       </pre>
     </div>
     )
@@ -85,7 +98,15 @@ export type CodeBlockGroupProps = React.HTMLAttributes < HTMLDivElement >
   }: CodeBlockGroupProps) {
     return (
       <div
-      className={cn("flex items-center justify-between", className)}
+      className={cn(
+        "flex items-center justify-between gap-2",
+        "px-4 py-2",
+        "border-b border-border bg-muted/30",
+        "text-sm text-muted-foreground",
+        "font-medium",
+        "min-h-[44px]",
+        className
+      )}
       {...props}
     >
       {children}

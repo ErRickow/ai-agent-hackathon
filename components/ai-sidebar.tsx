@@ -13,7 +13,6 @@ import {
   Gamepad2,
   GraduationCap,
   Palette,
-  Menu,
   MessageSquare,
   Volume2,
 } from "lucide-react";
@@ -200,7 +199,7 @@ export default function AISidebar({
         <SheetContent side="left" className="w-80 p-0">
           <div className="p-6 border-b border-border">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              AI Agent 
+              Hackathon AI
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Multi-modal AI Assistant</p>
           </div>
