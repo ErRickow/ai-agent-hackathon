@@ -46,7 +46,7 @@ import {
 import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
 import { excel } from "@/lib/prompts/excel-expert"
-import { predefinedPersonas } from "./"
+import { predefinedPersonas } from "./persona"
 
 interface Message {
   id: string
