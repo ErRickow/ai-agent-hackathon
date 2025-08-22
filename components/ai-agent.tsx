@@ -48,116 +48,112 @@ interface Persona {
 }
 
 const predefinedPersonas: Persona[] = [
-  {
-    id: "assistant",
-    name: "AI Assistant",
-    icon: <Bot className="w-4 h-4" />,
-    systemPrompt: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
-    description: "General purpose helpful assistant",
-  },
-  {
-    id: "expert",
-    name: "Intent Classifier",
-    icon: <GraduationCap className="w-4 h-4" />,
-    systemPrompt: intent,
-    description: "Profesional Classifier",
-  },
-  {
-    id: "creative",
-    name: "Quiz Creator",
-    icon: <Palette className="w-4 h-4" />,
-    systemPrompt: quiz,
-    description: "Profesional Quiz Creator",
-  },
-  {
-    id: "business",
-    name: "Business Advisor",
-    icon: <Briefcase className="w-4 h-4" />,
-    systemPrompt:
-      "You are a business advisor with expertise in strategy, marketing, and entrepreneurship. Provide practical business advice and insights.",
-    description: "Business strategy and advice",
-  },
-  {
-    id: "coach",
-    name: "Life Coach",
-    icon: <Heart className="w-4 h-4" />,
-    systemPrompt:
-      "You are a supportive life coach. Help users with personal development, motivation, and achieving their goals with empathy and encouragement.",
-    description: "Personal development and motivation",
-  },
-  {
-    id: "gaming",
-    name: "Gaming Buddy",
-    icon: <Gamepad2 className="w-4 h-4" />,
-    systemPrompt:
-      "You are a gaming enthusiast and expert. Help users with game strategies, recommendations, and discuss gaming topics with enthusiasm.",
-    description: "Gaming expert and enthusiast",
-  },
-]
+{
+  id: "assistant",
+  name: "AI Assistant",
+  icon: <Bot className="w-4 h-4" />,
+  systemPrompt: "You are a helpful AI assistant. Provide clear, accurate, and helpful responses to user queries.",
+  description: "General purpose helpful assistant",
+},
+{
+  id: "expert",
+  name: "Intent Classifier",
+  icon: <GraduationCap className="w-4 h-4" />,
+  systemPrompt: intent,
+  description: "Profesional Classifier",
+},
+{
+  id: "creative",
+  name: "Quiz Creator",
+  icon: <Palette className="w-4 h-4" />,
+  systemPrompt: quiz,
+  description: "Profesional Quiz Creator",
+},
+{
+  id: "business",
+  name: "Business Advisor",
+  icon: <Briefcase className="w-4 h-4" />,
+  systemPrompt: "You are a business advisor with expertise in strategy, marketing, and entrepreneurship. Provide practical business advice and insights.",
+  description: "Business strategy and advice",
+},
+{
+  id: "coach",
+  name: "Life Coach",
+  icon: <Heart className="w-4 h-4" />,
+  systemPrompt: "You are a supportive life coach. Help users with personal development, motivation, and achieving their goals with empathy and encouragement.",
+  description: "Personal development and motivation",
+},
+{
+  id: "gaming",
+  name: "Gaming Buddy",
+  icon: <Gamepad2 className="w-4 h-4" />,
+  systemPrompt: "You are a gaming enthusiast and expert. Help users with game strategies, recommendations, and discuss gaming topics with enthusiasm.",
+  description: "Gaming expert and enthusiast",
+}, ]
 
 interface Message {
   id: string
   role: "user" | "assistant"
   content: string
   timestamp: Date
-  provider?: "lunos" | "unli"
-  type?: "text" | "image" | "audio" | "embedding"
-  imageUrl?: string
-  audioUrl?: string
+  provider ? : "lunos" | "unli"
+  type ? : "text" | "image" | "audio" | "embedding"
+  imageUrl ? : string
+  audioUrl ? : string
 }
 
 type Provider = "lunos" | "unli"
 type AIMode = "chat" | "image" | "vision" | "tts" | "embedding"
 
 function AIAgent() {
-  const [messages, setMessages] = useState<Message[]>([])
+  const [messages, setMessages] = useState < Message[] > ([])
   const [input, setInput] = useState("")
   const [isLoading, setIsLoading] = useState(false)
-  const [provider, setProvider] = useState<Provider>("lunos")
-  const [aiMode, setAIMode] = useState<AIMode>("chat")
+  const [provider, setProvider] = useState < Provider > ("lunos")
+  const [aiMode, setAIMode] = useState < AIMode > ("chat")
   const [streamingMessage, setStreamingMessage] = useState("")
   const [imagePrompt, setImagePrompt] = useState("")
   const [ttsText, setTtsText] = useState("")
   const [embeddingText, setEmbeddingText] = useState("")
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null)
+  const [uploadedImage, setUploadedImage] = useState < string | null > (null)
   const [visionPrompt, setVisionPrompt] = useState("")
-
-  const [selectedPersona, setSelectedPersona] = useState<Persona>(predefinedPersonas[0])
+  
+  const [selectedPersona, setSelectedPersona] = useState < Persona > (predefinedPersonas[0])
   const [customSystemPrompt, setCustomSystemPrompt] = useState("")
   const [useCustomPrompt, setUseCustomPrompt] = useState(false)
   const [isPersonaDialogOpen, setIsPersonaDialogOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
-
-  const messagesEndRef = useRef<HTMLDivElement>(null)
-  const textareaRef = useRef<HTMLTextAreaElement>(null)
-  const fileInputRef = useRef<HTMLInputElement>(null)
-
+  
+  const messagesEndRef = useRef < HTMLDivElement > (null)
+  const textareaRef = useRef < HTMLTextAreaElement > (null)
+  const fileInputRef = useRef < HTMLInputElement > (null)
+  
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
   }
-
+  
   useEffect(() => {
     scrollToBottom()
   }, [messages, streamingMessage])
-
+  
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return
-
+    
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
       content: input.trim(),
       timestamp: new Date(),
     }
-
+    
     setMessages((prev) => [...prev, userMessage])
     setInput("")
     setIsLoading(true)
     setStreamingMessage("")
-
+    
     try {
       const systemPrompt = useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt
-
+      
       const response = await fetch("/api/chat", {
         method: "POST",
         headers: {
@@ -170,23 +166,23 @@ function AIAgent() {
           messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       })
-
+      
       if (!response.ok) {
         throw new Error("Failed to get response")
       }
-
+      
       const reader = response.body?.getReader()
       const decoder = new TextDecoder()
       let fullResponse = ""
-
+      
       if (reader) {
         while (true) {
           const { done, value } = await reader.read()
           if (done) break
-
+          
           const chunk = decoder.decode(value)
           const lines = chunk.split("\n")
-
+          
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const data = line.slice(6)
@@ -206,7 +202,7 @@ function AIAgent() {
           }
         }
       }
-
+      
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
@@ -214,7 +210,7 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
       }
-
+      
       setMessages((prev) => [...prev, assistantMessage])
       setStreamingMessage("")
     } catch (error) {
@@ -231,10 +227,10 @@ function AIAgent() {
       setIsLoading(false)
     }
   }
-
+  
   const generateImage = async () => {
     if (!imagePrompt.trim() || isLoading) return
-
+    
     setIsLoading(true)
     try {
       const response = await fetch("/api/image", {
@@ -242,9 +238,9 @@ function AIAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ prompt: imagePrompt, provider }),
       })
-
+      
       const data = await response.json()
-
+      
       const imageMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
@@ -254,7 +250,7 @@ function AIAgent() {
         type: "image",
         imageUrl: data.imageUrl,
       }
-
+      
       setMessages((prev) => [...prev, imageMessage])
       setImagePrompt("")
     } catch (error) {
@@ -263,10 +259,10 @@ function AIAgent() {
       setIsLoading(false)
     }
   }
-
+  
   const generateSpeech = async () => {
     if (!ttsText.trim() || isLoading) return
-
+    
     setIsLoading(true)
     try {
       const response = await fetch("/api/tts", {
@@ -274,9 +270,9 @@ function AIAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: ttsText, provider }),
       })
-
+      
       const data = await response.json()
-
+      
       const audioMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
@@ -286,7 +282,7 @@ function AIAgent() {
         type: "audio",
         audioUrl: data.audioUrl,
       }
-
+      
       setMessages((prev) => [...prev, audioMessage])
       setTtsText("")
     } catch (error) {
@@ -295,10 +291,10 @@ function AIAgent() {
       setIsLoading(false)
     }
   }
-
+  
   const generateEmbedding = async () => {
     if (!embeddingText.trim() || isLoading) return
-
+    
     setIsLoading(true)
     try {
       const response = await fetch("/api/embedding", {
@@ -306,9 +302,9 @@ function AIAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: embeddingText, provider }),
       })
-
+      
       const data = await response.json()
-
+      
       const embeddingMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
@@ -320,7 +316,7 @@ function AIAgent() {
         provider,
         type: "embedding",
       }
-
+      
       setMessages((prev) => [...prev, embeddingMessage])
       setEmbeddingText("")
     } catch (error) {
@@ -329,10 +325,10 @@ function AIAgent() {
       setIsLoading(false)
     }
   }
-
+  
   const analyzeImage = async () => {
     if (!uploadedImage || !visionPrompt.trim() || isLoading) return
-
+    
     setIsLoading(true)
     try {
       const response = await fetch("/api/vision", {
@@ -344,9 +340,9 @@ function AIAgent() {
           provider,
         }),
       })
-
+      
       const data = await response.json()
-
+      
       const visionMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
@@ -355,7 +351,7 @@ function AIAgent() {
         provider,
         type: "text",
       }
-
+      
       setMessages((prev) => [...prev, visionMessage])
       setVisionPrompt("")
       setUploadedImage(null)
@@ -365,8 +361,8 @@ function AIAgent() {
       setIsLoading(false)
     }
   }
-
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  
+  const handleImageUpload = (e: React.ChangeEvent < HTMLInputElement > ) => {
     const file = e.target.files?.[0]
     if (file) {
       const reader = new FileReader()
@@ -376,7 +372,7 @@ function AIAgent() {
       reader.readAsDataURL(file)
     }
   }
-
+  
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault()
@@ -393,7 +389,7 @@ function AIAgent() {
       }
     }
   }
-
+  
   const getModeIcon = (mode: AIMode) => {
     switch (mode) {
       case "chat":
@@ -408,7 +404,7 @@ function AIAgent() {
         return <Code2 className="w-4 h-4" />
     }
   }
-
+  
   const getModeTitle = (mode: AIMode) => {
     switch (mode) {
       case "chat":
@@ -423,7 +419,7 @@ function AIAgent() {
         return "Text Embeddings"
     }
   }
-
+  
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground">
