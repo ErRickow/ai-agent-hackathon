@@ -52,7 +52,7 @@ export default function AISidebar({
   setUseCustomPrompt,
   isSidebarOpen,
   setIsSidebarOpen,
-  onSelectPersona
+  on
 }: AISidebarProps) {
   const handleSelectPersona = (persona: any) => {
     onSelectPersona(persona);

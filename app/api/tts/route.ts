@@ -1,26 +1,25 @@
-import { type NextRequest, NextResponse } from "next/server"
+import { type NextRequest, NextResponse } from "next/server";
 
 class LunosClient {
-  private apiKey: string
-  private baseURL: string
-  private appId?: string
+  private apiKey: string;
+  private baseURL: string;
+  private appId?: string;
 
   constructor(config: { apiKey: string; baseURL?: string; appId?: string }) {
-    this.apiKey = config.apiKey
-    this.baseURL = config.baseURL || "https://api.lunos.tech/v1"
-    this.appId = config.appId
+    this.apiKey = config.apiKey;
+    this.baseURL = config.baseURL || "https://api.lunos.tech/v1";
+    this.appId = config.appId;
   }
 
   audio = {
-    textToSpeech: async (options: {
-      text: string
-      voice: string
-      model: string
-      response_format?: string
-      speed?: number
-      appId?: string
+    generations: async (options: {
+      input: string;
+      voice: string;
+      model: string;
+      response_format?: string;
+      speed?: number;
     }) => {
-      const response = await fetch(`${this.baseURL}/audio/speech`, {
+      const response = await fetch(`${this.baseURL}/audio/generations`, {
         method: "POST",
         headers: {
           Authorization: `Bearer ${this.apiKey}`,
@@ -28,46 +27,69 @@ class LunosClient {
           ...(this.appId && { "X-App-ID": this.appId }),
         },
         body: JSON.stringify(options),
-      })
+      });
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorText = await response.text();
+        throw new Error(`HTTP error! status: ${response.status}, message: ${errorText}`);
       }
 
-      return response
+      return response;
     },
-  }
+  };
 }
 
 export async function POST(request: NextRequest) {
   try {
-    const { text, provider } = await request.json()
+    const { text, provider } = await request.json();
 
     if (provider === "lunos") {
+      if (!process.env.LUNOS_KEY) {
+        throw new Error("LUNOS_KEY environment variable is not set.");
+      }
+      
       const client = new LunosClient({
         apiKey: process.env.LUNOS_KEY,
         appId: "er-project",
-      })
+      });
 
-      const response = await client.audio.textToSpeech({
-        text,
+      const lunosResponse = await client.audio.generations({
+        input: text,
         voice: "alloy",
         model: "openai/tts",
         response_format: "mp3",
-        speed: 1.0,
-      })
+      });
 
-      // Convert audio buffer to base64 URL
-      const audioBuffer = await response.arrayBuffer()
-      const base64Audio = Buffer.from(audioBuffer).toString("base64")
-      const audioUrl = `data:audio/mpeg;base64,${base64Audio}`
+      // Ambil body dari respons Lunos (yang merupakan stream audio)
+      const audioStream = lunosResponse.body;
 
-      return NextResponse.json({ audioUrl })
+      if (!audioStream) {
+        return NextResponse.json({ error: "No audio stream received from provider" }, { status: 500 });
+      }
+
+      // Buat respons baru untuk dikirim ke client, dengan stream audio sebagai body
+      // dan header yang sesuai.
+      const response = new NextResponse(audioStream, {
+        status: 200,
+        headers: {
+          "Content-Type": "audio/mpeg",
+          "Content-Disposition": `attachment; filename="speech.mp3"`,
+        },
+      });
+
+      return response;
     }
 
-    return NextResponse.json({ error: "Provider not supported for TTS" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Provider not supported for TTS" },
+      { status: 400 }
+    );
   } catch (error) {
-    console.error("TTS error:", error)
-    return NextResponse.json({ error: "Failed to generate speech" }, { status: 500 })
+    console.error("TTS error:", error);
+    const errorMessage = error instanceof Error ? error.message : "An unknown error occurred";
+    return NextResponse.json(
+      { error: "Failed to generate speech", details: errorMessage },
+      { status: 500 }
+    );
   }
 }

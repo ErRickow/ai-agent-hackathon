@@ -198,7 +198,7 @@ function AIAgent() {
 
   const generateSpeech = async () => {
     if (!ttsText.trim() || isLoading) return;
-
+    
     setIsLoading(true);
     try {
       const response = await fetch("/api/tts", {
@@ -206,9 +206,17 @@ function AIAgent() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text: ttsText, provider }),
       });
-
-      const data = await response.json();
-
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      // 1. Dapatkan audio sebagai Blob
+      const audioBlob = await response.blob();
+      
+      // 2. Buat Object URL dari Blob
+      const audioUrl = URL.createObjectURL(audioBlob);
+      
       const audioMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
@@ -216,9 +224,9 @@ function AIAgent() {
         timestamp: new Date(),
         provider,
         type: "audio",
-        audioUrl: data.audioUrl,
+        audioUrl: audioUrl,
       };
-
+      
       setMessages((prev) => [...prev, audioMessage]);
       setTtsText("");
     } catch (error) {

@@ -14,7 +14,7 @@ export type CodeBlockProps = {
     return (
       <div
       className={cn(
-        "not-prose flex w-full flex-col overflow-clip border",
+        "not-prose flex w-full flex-col overflow-clip border", // overflow-clip untuk memastikan semuanya tetap di dalam border
         "border-border bg-card text-card-foreground rounded-xl",
         className
       )}
@@ -53,12 +53,14 @@ export type CodeBlockCodeProps = {
       highlight()
     }, [code, language, appTheme])
     
+    // Diperbarui: Menambahkan overflow-x-auto
     const classNames = cn(
-      "w-full overflow-x-auto text-[13px] [&>pre]:px-4 [&>pre]:py-4 [&>pre]:!bg-background",
+      "w-full overflow-x-auto text-[13px] [&>pre]:py-4 [&>pre]:!bg-background",
+      // Mengubah padding horizontal agar diterapkan di sini, bukan di <pre>
+      "px-4",
       className
     )
     
-    // SSR fallback: render plain code if not hydrated yet
     return highlightedHtml ? (
       <div
       className={classNames}
@@ -67,7 +69,7 @@ export type CodeBlockCodeProps = {
     />
     ) : (
       <div className={classNames} {...props}>
-      <pre>
+      <pre className="!bg-transparent p-0"> {/* Hapus padding dari <pre> agar tidak dobel */}
         <code>{code}</code>
       </pre>
     </div>
