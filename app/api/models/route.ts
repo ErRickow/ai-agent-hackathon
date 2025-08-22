@@ -8,7 +8,7 @@ interface Model {
 
 // Fungsi untuk mengambil model Lunos
 async function getLunosModels(apiKey: string): Promise < Model[] > {
-  const response = await fetch("https://api.lunos.tech/v1/public/models", {
+  const response = await fetch("https://api.lunos.tech/public/models", {
     headers: {
       Authorization: `Bearer ${apiKey}`,
     },
