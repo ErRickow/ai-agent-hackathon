@@ -45,7 +45,7 @@ export async function POST(request: NextRequest) {
 
     if (provider === "unli") {
       const client = new UnliClient({
-        apiKey: "sk-e75005eb20d3a45a62791ba6e1da46380cd9521748891354",
+        apiKey: process.env.UNLI_KEY,
         baseURL: "https://api.unli.dev/v1",
       })
 

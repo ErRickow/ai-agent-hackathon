@@ -88,27 +88,27 @@ export async function POST(request: NextRequest) {
 
     if (provider === "lunos") {
       const client = new LunosClient({
-        apiKey: "sk-e75005eb20d3a45a62791ba6e1da46380cd9521748891354",
+        apiKey: process.env.LUNOS_KEY,
         baseURL: "https://api.lunos.tech/v1",
       })
 
       response = await client.chat.createCompletion({
-        model: "openai/gpt-4o",
+        model: "google/gemini-2.0-flash",
         messages: allMessages,
-        max_tokens: 1000,
+        max_tokens: 4024,
         temperature: 0.7,
         stream: true,
       })
     } else {
       const client = new UnliClient({
-        apiKey: "sk-e75005eb20d3a45a62791ba6e1da46380cd9521748891354",
+        apiKey: process.env.UNLI_KEY,
         baseURL: "https://api.unli.dev/v1",
       })
 
       response = await client.chat.completions.create({
         model: "auto",
         messages: allMessages,
-        max_tokens: 1000,
+        max_tokens: 4024,
         temperature: 0.7,
         stream: true,
       })

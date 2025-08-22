@@ -36,6 +36,8 @@ import {
   Volume2,
   RotateCcw,
 } from "lucide-react"
+import { intent } from "@/lib/prompts/intent-classifier"
+import { quiz } from "@/lib/prompts/quiz-creator"
 
 interface Persona {
   id: string
@@ -55,19 +57,17 @@ const predefinedPersonas: Persona[] = [
   },
   {
     id: "expert",
-    name: "Technical Expert",
+    name: "Intent Classifier",
     icon: <GraduationCap className="w-4 h-4" />,
-    systemPrompt:
-      "You are a technical expert with deep knowledge in programming, AI, and technology. Provide detailed, accurate technical explanations and solutions.",
-    description: "Expert in programming and technology",
+    systemPrompt: system,
+    description: "Profesional Classifier",
   },
   {
     id: "creative",
-    name: "Creative Writer",
+    name: "Quiz Creator",
     icon: <Palette className="w-4 h-4" />,
-    systemPrompt:
-      "You are a creative writer and storyteller. Help users with creative writing, brainstorming ideas, and crafting engaging content.",
-    description: "Creative writing and storytelling",
+    systemPrompt: quiz,
+    description: "Profesional Quiz Creator",
   },
   {
     id: "business",
@@ -431,7 +431,7 @@ function AIAgent() {
         <div className={`hidden lg:flex flex-col w-80 border-r border-border bg-card transition-all duration-300`}>
           <div className="p-6 border-b border-border">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-              AI Agent Hub
+              AI Agent Hackathon
             </h1>
             <p className="text-sm text-muted-foreground mt-1">Multi-modal AI Assistant</p>
           </div>

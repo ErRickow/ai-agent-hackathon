@@ -19,8 +19,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   title: "AI Hackathon Agent - Multi-Modal AI Platform",
-  description: "Complete AI platform with chat, image generation, vision, TTS, and embeddings",
-  generator: "v0.app",
+  description: "Complete AI platform with chat, image generation, vision, TTS, and embeddings"
 }
 
 export default function RootLayout({

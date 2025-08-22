@@ -8,7 +8,7 @@ class LunosClient {
   constructor(config: { apiKey: string; baseURL?: string; appId?: string }) {
     this.apiKey = config.apiKey
     this.baseURL = config.baseURL || "https://api.lunos.tech/v1"
-    this.appId = config.appId
+    this.appId = config.appId || "er-project"
   }
 
   embedding = {
@@ -43,8 +43,8 @@ export async function POST(request: NextRequest) {
 
     if (provider === "lunos") {
       const client = new LunosClient({
-        apiKey: "sk-e75005eb20d3a45a62791ba6e1da46380cd9521748891354",
-        appId: "hackathon-embedding-v1.0",
+        apiKey: process.env.LUNOS_KEY,
+        appId: "er-project",
       })
 
       const response = await client.embedding.embed({
