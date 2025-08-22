@@ -70,7 +70,7 @@ export default function AISidebar({
   
   return (
     <>
-      <div className={`hidden lg:flex flex-col w-80 border-r border-border bg-card transition-all duration-300`}>
+      <div className={`hidden lg:flex flex-col w-full lg:w-80 border-r border-border bg-card transition-all duration-300`}>
         <div className="p-6 border-b border-border">
           <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
             AI Agent Hackathon
@@ -196,7 +196,7 @@ export default function AISidebar({
         </div>
       </div>
       <Sheet open={isSidebarOpen} onOpenChange={setIsSidebarOpen}>
-        <SheetContent side="left" className="w-80 p-0">
+        <SheetContent side="left" className="w-full sm:w-80 p-0 overflow-y-auto">
           <div className="p-6 border-b border-border">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               Hackathon AI
