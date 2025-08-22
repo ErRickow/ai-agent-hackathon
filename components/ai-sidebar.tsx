@@ -240,7 +240,13 @@ export default function AISidebar({
                   className="w-full justify-start"
                   onClick={() => setProvider("lunos")}
                 >
-                  <Cpu className="w-4 h-4 mr-2" />
+                    <img
+                      src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent("https://lunos.tech")}`}
+                      alt="Lunos.tech Favicon"
+                      width={16}
+                      height={16}
+                      className="mr-2 rounded-full"
+                    />
                   Lunos API
                 </Button>
                 <Button
@@ -249,7 +255,13 @@ export default function AISidebar({
                   className="w-full justify-start"
                   onClick={() => setProvider("unli")}
                 >
-                  <Globe className="w-4 h-4 mr-2" />
+                    <img
+                      src={`https://www.google.com/s2/favicons?sz=64&domain_url=${encodeURIComponent("https://unli.dev")}`}
+                      alt="Unli.dev Favicon"
+                      width={16}
+                      height={16}
+                      className="mr-2 rounded-full"
+                    />
                   Unli.dev API
                 </Button>
               </div>

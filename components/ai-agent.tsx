@@ -20,7 +20,6 @@ import {
   Palette,
   Menu,
   MessageSquare,
-  Cpu,
   Globe,
   Volume2,
   RotateCcw,
