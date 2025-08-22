@@ -1,6 +1,13 @@
 "use client"
 
 import type React from "react"
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 
 import { useState, useRef, useEffect } from "react"
 import { Button } from "@/components/ui/button"
@@ -39,7 +46,7 @@ import {
 import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
 import { excel } from "@/lib/prompts/excel-expert"
-import { predefinedPersonas } from "./persona"
+import { predefinedPersonas } from "./"
 
 interface Message {
   id: string
@@ -754,8 +761,33 @@ const generateImage = async () => {
                                 : "bg-secondary text-secondary-foreground"
                             }`}
                           >
-                            <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                              {message.content}
+                            <div className="prose dark:prose-invert">
+                              <ReactMarkdown
+                                remarkPlugins={[remarkGfm, remarkMath]}
+                                rehypePlugins={[rehypeKatex]}
+                                components={{
+                                  code(props) {
+                                    const { children, className, node, ...rest } = props;
+                                    const match = /language-(\w+)/.exec(className || '');
+                                    return match ? (
+                                      <SyntaxHighlighter
+                                        {...rest}
+                                        PreTag="div"
+                                        language={match[1]}
+                                        style={vscDarkPlus}
+                                      >
+                                        {String(children).replace(/\n$/, '')}
+                                      </SyntaxHighlighter>
+                                    ) : (
+                                      <code {...rest} className={className}>
+                                        {children}
+                                      </code>
+                                    );
+                                  },
+                                }}
+                              >
+                                {message.content}
+                              </ReactMarkdown>
                             </div>
                             {message.imageUrl && (
                               <img
