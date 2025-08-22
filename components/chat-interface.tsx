@@ -130,7 +130,8 @@ export default function ChatInterface({
   
   return (
     <>
-      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-4">
+      {/* Messages Area */}
+      <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
             <div 
@@ -151,12 +152,11 @@ export default function ChatInterface({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-3 ${
-              message.role === "user" ? "flex-row-reverse" : "flex-row"
-            }`}
+            className={`flex gap-4 items-start`}
           >
+            {/* AVATAR */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1`}
               style={{
                 backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
                 color: message.role === 'user' ? userTextColor : 'var(--muted-foreground)',
@@ -168,30 +168,27 @@ export default function ChatInterface({
                 <Bot className="w-4 h-4" />
               )}
             </div>
-            <div
-              className={`flex-1 space-y-2 ${
-                message.role === "user" ? "flex flex-col items-end" : ""
-              }`}
-            >
+
+            {/* MESSAGE CONTENT */}
+            <div className="flex-1 space-y-1">
+              <div className="font-semibold text-sm">
+                {message.role === "user" ? "You" : selectedPersona.name}
+              </div>
               <div
-                className={`rounded-lg p-3 max-w-[80%] break-words`}
-                style={{
-                  backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
-                  color: message.role === 'user' ? userTextColor : 'var(--card-foreground)',
-                }}
+                className={`w-full break-words`}
               >
                 {message.type === "image" && message.imageUrl ? (
-                  <div className="space-y-2">
+                  <div className="space-y-2 pt-2">
                     <img
                       src={message.imageUrl}
                       alt="Generated"
-                      className="rounded-lg max-w-full h-auto"
+                      className="rounded-lg max-w-sm h-auto"
                     />
                     <p className="text-sm">{message.content}</p>
                   </div>
                 ) : message.type === "audio" && message.audioUrl ? (
-                  <div className="space-y-2">
-                    <audio controls className="w-full">
+                  <div className="space-y-2 pt-2">
+                    <audio controls className="w-full max-w-sm">
                       <source src={message.audioUrl} type="audio/mpeg" />
                     </audio>
                     <p className="text-sm">{message.content}</p>
@@ -207,7 +204,7 @@ export default function ChatInterface({
                   </div>
                 )}
               </div>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
                   <Badge variant="outline" className="text-xs">
@@ -219,13 +216,17 @@ export default function ChatInterface({
           </div>
         ))}
 
+        {/* Streaming Message */}
         {streamingMessage && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <div className="flex gap-4 items-start">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1 space-y-2">
-              <div className="bg-muted rounded-lg p-3 max-w-[80%] break-words">
+            <div className="flex-1 space-y-1">
+               <div className="font-semibold text-sm">
+                {selectedPersona.name}
+              </div>
+              <div className="w-full break-words">
                 <div className="prose prose-sm max-w-none dark:prose-invert">
                   <ReactMarkdown
                     components={markdownComponents}
@@ -239,23 +240,26 @@ export default function ChatInterface({
           </div>
         )}
 
+        {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
-          <div className="flex gap-3">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+          <div className="flex gap-4 items-start">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <Bot className="w-4 h-4" />
             </div>
-            <div className="flex-1">
-              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+            <div className="flex-1 space-y-2">
+                <div className="font-semibold text-sm">
+                    {selectedPersona.name}
+                </div>
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm">hmm...</span>
+                  <span className="text-sm text-muted-foreground">Berpikir...</span>
                 </div>
-              </div>
             </div>
           </div>
         )}
       </div>
 
+      {/* Input Area */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
         <div className="flex gap-2">
           <Textarea
