@@ -419,11 +419,9 @@ function AIAgent() {
         
         {/* Sidebar */}
         <div className={`
-          fixed top-0 left-0 h-full
-          lg:relative lg:translate-x-0 
-          transition-transform duration-300 ease-in-out z-50
+          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
           ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
-          w-80 bg-card
+          w-full sm:w-80 h-full
         `}>
           <AISidebar
             aiMode={aiMode}
@@ -446,7 +444,7 @@ function AIAgent() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-w-0">
+        <div className="flex-1 flex flex-col min-w-0 w-full">
           {/* Header */}
           <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
             <div className="flex items-center justify-between p-3 sm:p-4 gap-2">
