@@ -430,7 +430,7 @@ function AIAgent() {
           selectedModel = { selectedModel }
           setSelectedModel = { setSelectedModel }
         />
-        <div className="flex-1 flex flex-col">
+        <div className="flex-1 flex flex-col overflow-hidden">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">
             <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -473,7 +473,7 @@ function AIAgent() {
               </div>
             </div>
           </header>
-          <div className="flex-1 flex flex-col">
+          <div className="flex-1 flex flex-col min-h-0">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}

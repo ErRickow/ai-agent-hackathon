@@ -137,6 +137,7 @@ export default function ChatInterface({
   
   return (
     <>
+      <div className="flex flex-col h-full">
       {/* Messages Area */}
       <div ref={messagesContainerRef} className="flex-1 overflow-y-auto p-4 space-y-6">
         {messages.length === 0 && (
@@ -314,6 +315,7 @@ export default function ChatInterface({
           </Tooltip>
         </div>
       </div> 
+      </div>
     </>
   );
 }
