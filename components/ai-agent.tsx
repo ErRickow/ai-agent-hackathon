@@ -36,7 +36,14 @@ import VisionInterface from "./vision-interface";
 import TTSInterface from "./tts-interface";
 import EmbeddingInterface from "./embedding-interface";
 
-
+interface Persona {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  systemPrompt: string;
+  description: string;
+  color: string;
+}
 
 interface Message {
   id: string;
