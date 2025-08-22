@@ -229,6 +229,13 @@ function AIAgent() {
     }
   }
   
+  const switchToChatMode = () => {
+    setAIMode("chat");
+    setTimeout(() => {
+      textareaRef.current?.focus();
+    }, 0);
+  };
+  
   const generateImage = async () => {
     if (!imagePrompt.trim() || isLoading) return
     
@@ -260,6 +267,7 @@ function AIAgent() {
       
       setMessages((prev) => [...prev, imageMessage])
       setImagePrompt("")
+      switchToChatMode()
     } catch (error) {
       console.error("Image generation error:", error)
       const errorMessage: Message = {
@@ -434,6 +442,8 @@ function AIAgent() {
         return "Text Embeddings"
     }
   }
+  
+
   
   return (
     <TooltipProvider>
@@ -868,15 +878,15 @@ function AIAgent() {
                 {/* Chat Input */}
                 <div className="p-4 border-t border-border">
                   <div className="flex gap-2 max-w-4xl mx-auto">
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onKeyPress={handleKeyPress}
-                      placeholder={`Chat with ${useCustomPrompt ? "Custom AI" : selectedPersona.name}...`}
-                      className="min-h-[60px] resize-none font-mono"
-                      disabled={isLoading}
-                    />
+                  <Textarea
+                    ref={textareaRef}
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onKeyPress={handleKeyPress}
+                    placeholder={`Chat with ${useCustomPrompt ? "Custom AI" : selectedPersona.name}...`}
+                    className="min-h-[60px] resize-none font-mono"
+                    disabled={isLoading}
+                  />
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="lg" className="px-4">
