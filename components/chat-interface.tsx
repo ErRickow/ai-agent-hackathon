@@ -1,11 +1,16 @@
-import * as React from "react";
-import { ScrollShadow } from "@heroui/react";
-import { Textarea } from "@heroui/react";
+"use client";
+
+import type React from "react";
+import { useRef, useEffect } from "react";
+import { Send, Bot, User, Loader2, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Send, Loader2, Bot, User } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Markdown } from "./markdown"
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { CodeBlock, CodeBlockCode, CodeBlockGroup } from "@/components/code-block";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 
 interface Message {
   id: string;
@@ -18,23 +23,80 @@ interface Message {
   audioUrl ? : string;
 }
 
+interface Persona {
+  name: string;
+  description: string;
+  systemPrompt: string;
+  icon: React.ReactNode;
+  color: string;
+}
+
 interface ChatInterfaceProps {
   messages: Message[];
   streamingMessage: string;
-  selectedPersona: {
-    id: string;
-    name: string;
-    icon: React.ReactNode;
-    systemPrompt: string;
-    description: string;
-  };
+  selectedPersona: Persona;
   provider: "lunos" | "unli";
   isLoading: boolean;
   input: string;
-  setInput: (input: string) => void;
+  setInput: (value: string) => void;
   sendMessage: () => void;
   handleKeyPress: (e: React.KeyboardEvent) => void;
 }
+
+// Custom components untuk ReactMarkdown dengan CodeBlock baru
+const markdownComponents = {
+  code({ node, inline, className, children, ...props }: any) {
+    const match = /language-(\w+)/.exec(className || '');
+    const language = match ? match[1] : 'text';
+    const codeString = String(children).replace(/\n$/, '');
+    
+    if (inline) {
+      return (
+        <code 
+          className="bg-muted px-1.5 py-0.5 rounded text-sm font-mono"
+          {...props}
+        >
+          {children}
+        </code>
+      );
+    }
+    
+    return (
+      <CodeBlock className="my-4">
+        <CodeBlockGroup className="px-4 py-2 border-b border-border">
+          <span className="text-sm text-muted-foreground">{language}</span>
+          <Button 
+            variant="ghost" 
+            size="sm"
+            onClick={() => navigator.clipboard.writeText(codeString)}
+          >
+            <Copy className="h-4 w-4" />
+          </Button>
+        </CodeBlockGroup>
+        <CodeBlockCode 
+          code={codeString} 
+          language={language}
+        />
+      </CodeBlock>
+    );
+  },
+  pre({ children }: any) {
+    return <>{children}</>;
+  },
+  a({ href, children, ...props }: any) {
+    return (
+      <a
+        href={href}
+        target="_blank"
+        rel="noopener noreferrer"
+        className="text-primary hover:underline"
+        {...props}
+      >
+        {children}
+      </a>
+    );
+  }
+};
 
 export default function ChatInterface({
   messages,
@@ -47,151 +109,177 @@ export default function ChatInterface({
   sendMessage,
   handleKeyPress,
 }: ChatInterfaceProps) {
-  const messagesEndRef = React.useRef < HTMLDivElement > (null);
-  const textareaRef = React.useRef < HTMLTextAreaElement > (null);
+  const messagesEndRef = useRef < HTMLDivElement > (null);
   
-  React.useEffect(() => {
+  useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingMessage]);
   
+  const formatTimestamp = (date: Date) => {
+    return date.toLocaleTimeString("id-ID", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+  
   return (
     <>
-      <ScrollShadow className="flex-1 p-4 w-full h-auto max-h-[1000px] lg:max-h-full">
-        <div className="space-y-4 max-w-4xl mx-auto">
-          {messages.length === 0 && (
-            <div className="text-center text-muted-foreground py-12">
-              <div className="flex items-center justify-center gap-2 mb-4">
-                {selectedPersona.icon}
-                <Bot className="w-12 h-12 opacity-50" />
-              </div>
-              <p className="font-semibold text-lg">AI Assistant Ready</p>
-              <p className="text-sm mt-2 max-w-md mx-auto">{selectedPersona.description}</p>
+      {/* Messages Area */}
+      <div className="flex-1 overflow-auto p-4 space-y-4">
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+              {selectedPersona.icon}
             </div>
-          )}
-          {messages.map((message) => (
+            <div className="space-y-2">
+              <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
+              <p className="text-muted-foreground max-w-md">
+                {selectedPersona.description}
+              </p>
+            </div>
+          </div>
+        )}
+
+        {messages.map((message) => (
+          <div
+            key={message.id}
+            className={`flex gap-3 ${
+              message.role === "user" ? "flex-row-reverse" : "flex-row"
+            }`}
+          >
             <div
-              key={message.id}
-              className={`flex gap-3 ${message.role === "user" ? "justify-end" : "justify-start"}`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
+                message.role === "user" 
+                  ? "bg-primary text-primary-foreground" 
+                  : "bg-muted"
+              }`}
             >
-              <div className={`flex gap-3 max-w-[80%] ${message.role === "user" ? "flex-row-reverse" : "flex-row"}`}>
-                <div className="flex-shrink-0">
-                  {message.role === "user" ? (
-                    <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center">
-                      <User className="w-4 h-4 text-primary-foreground" />
-                    </div>
-                  ) : (
-                    <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                      {selectedPersona.icon}
-                    </div>
-                  )}
-                </div>
-                <div
-                  className={`rounded-lg p-4 ${
-                    message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
-                  }`}
-                >
-                  <div className="prose dark:prose-invert">
-                    <Markdown>
-                      {message.content}
-                    </Markdown>
-                  </div>
-                  {message.imageUrl && (
+              {message.role === "user" ? (
+                <User className="w-4 h-4" />
+              ) : (
+                <Bot className="w-4 h-4" />
+              )}
+            </div>
+            <div
+              className={`flex-1 space-y-2 ${
+                message.role === "user" ? "flex flex-col items-end" : ""
+              }`}
+            >
+              <div
+                className={`rounded-lg p-3 max-w-[80%] ${
+                  message.role === "user"
+                    ? "bg-primary text-primary-foreground ml-auto"
+                    : "bg-muted"
+                }`}
+              >
+                {message.type === "image" && message.imageUrl ? (
+                  <div className="space-y-2">
                     <img
-                      src={message.imageUrl || "/placeholder.svg"}
+                      src={message.imageUrl}
                       alt="Generated"
-                      className="mt-3 rounded-lg max-w-full h-auto"
+                      className="rounded-lg max-w-full h-auto"
                     />
-                  )}
-                  {message.audioUrl && (
-                    <audio controls className="mt-3 w-full">
+                    <p className="text-sm">{message.content}</p>
+                  </div>
+                ) : message.type === "audio" && message.audioUrl ? (
+                  <div className="space-y-2">
+                    <audio controls className="w-full">
                       <source src={message.audioUrl} type="audio/mpeg" />
                     </audio>
-                  )}
-                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
-                    <span>{message.timestamp.toLocaleTimeString()}</span>
-                    {message.provider && (
-                      <Badge variant="outline" className="text-xs">
-                        {message.provider}
-                      </Badge>
-                    )}
-                    {message.type && message.type !== "text" && (
-                      <Badge variant="secondary" className="text-xs">
-                        {message.type}
-                      </Badge>
-                    )}
+                    <p className="text-sm">{message.content}</p>
                   </div>
-                </div>
-              </div>
-            </div>
-          ))}
-          {streamingMessage && (
-            <div className="flex gap-3 justify-start">
-              <div className="flex gap-3 max-w-[80%]">
-                <div className="flex-shrink-0">
-                  <div className="w-8 h-8 rounded-full bg-secondary flex items-center justify-center">
-                    {selectedPersona.icon}
-                  </div>
-                </div>
-                <div className="rounded-lg p-4 bg-secondary text-secondary-foreground">
-                  <div className="prose dark:prose-invert">
+                ) : (
+                  <div className="prose prose-sm max-w-none dark:prose-invert">
                     <ReactMarkdown
-                      remarkPlugins={[remarkGfm, remarkMath]}
-                      rehypePlugins={[rehypeKatex]}
-                      components={{
-                        code(props) {
-                          const { children, className, node, ...rest } = props;
-                          const match = /language-(\w+)/.exec(className || '');
-                          return match ? (
-                            <SyntaxHighlighter
-                              {...rest}
-                              PreTag="div"
-                              language={match[1]}
-                              style={vscDarkPlus}
-                            >
-                              {String(children).replace(/\n$/, '')}
-                            </SyntaxHighlighter>
-                          ) : (
-                            <code {...rest} className={className}>
-                              {children}
-                            </code>
-                          );
-                        },
-                      }}
+                      components={markdownComponents}
+                      remarkPlugins={[remarkGfm, remarkBreaks]}
                     >
-                      {streamingMessage}
+                      {message.content}
                     </ReactMarkdown>
                   </div>
-                  <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
-                    <Badge variant="outline" className="text-xs">
-                      {provider}
-                    </Badge>
-                    <span>streaming...</span>
-                  </div>
+                )}
+              </div>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                <span>{formatTimestamp(message.timestamp)}</span>
+                {message.provider && (
+                  <Badge variant="outline" className="text-xs">
+                    {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
+                  </Badge>
+                )}
+              </div>
+            </div>
+          </div>
+        ))}
+
+        {/* Streaming Message */}
+        {streamingMessage && (
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="flex-1 space-y-2">
+              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                <div className="prose prose-sm max-w-none dark:prose-invert">
+                  <ReactMarkdown
+                    components={markdownComponents}
+                    remarkPlugins={[remarkGfm, remarkBreaks]}
+                  >
+                    {streamingMessage}
+                  </ReactMarkdown>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* Loading Indicator */}
+        {isLoading && !streamingMessage && (
+          <div className="flex gap-3">
+            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0">
+              <Bot className="w-4 h-4" />
+            </div>
+            <div className="flex-1">
+              <div className="bg-muted rounded-lg p-3 max-w-[80%]">
+                <div className="flex items-center gap-2">
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span className="text-sm">Mengetik...</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div ref={messagesEndRef} />
-      </ScrollShadow>
-      <div className="p-4 border-t border-border">
-        <div className="flex gap-2 max-w-4xl mx-auto">
+      </div>
+
+      {/* Input Area */}
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+        <div className="flex gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            onKeyPress={handleKeyPress}
-            placeholder={`ask ${selectedPersona.name}...`}
-            className="min-h-[60px] resize-none font-mono"
-            isDisabled={isLoading}
+            onKeyDown={handleKeyPress}
+            placeholder="Ketik pesan Anda..."
+            className="flex-1 min-h-[44px] max-h-32 resize-none"
+            disabled={isLoading}
           />
           <Tooltip>
             <TooltipTrigger asChild>
-              <Button onClick={sendMessage} disabled={!input.trim() || isLoading} size="lg" className="px-4">
-                {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+              <Button
+                onClick={sendMessage}
+                disabled={!input.trim() || isLoading}
+                size="icon"
+                className="shrink-0"
+              >
+                {isLoading ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Send className="w-4 h-4" />
+                )}
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Kirim Pesan</p>
+              <p>Kirim pesan</p>
             </TooltipContent>
           </Tooltip>
         </div>
