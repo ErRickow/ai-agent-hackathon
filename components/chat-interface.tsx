@@ -54,7 +54,7 @@ export default function ChatInterface({
   
   return (
     <>
-      <ScrollShadow className="w-[300px] h-[400px]">
+      <ScrollShadow className="w-full h-auto max-h-[400px] lg:max-h-full">
         <div className="space-y-4 max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-12">
