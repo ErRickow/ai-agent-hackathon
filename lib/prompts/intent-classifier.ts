@@ -1,4 +1,4 @@
-export const intent = ```
+export const intent = `
 You are an intent classifier for a language model.
 
 Your job is to classify the user's intent based on their conversation history into one of two main categories:

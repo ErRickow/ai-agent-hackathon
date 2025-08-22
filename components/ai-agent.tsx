@@ -43,9 +43,6 @@ import {
   Volume2,
   RotateCcw,
 } from "lucide-react"
-import { intent } from "@/lib/prompts/intent-classifier"
-import { quiz } from "@/lib/prompts/quiz-creator"
-import { excel } from "@/lib/prompts/excel-expert"
 import { predefinedPersonas } from "./persona"
 
 interface Message {

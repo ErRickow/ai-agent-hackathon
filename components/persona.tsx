@@ -8,6 +8,9 @@ import {
   Heart,
   Gamepad2
 } from "lucide-react"
+import { intent } from "@/lib/prompts/intent-classifier"
+import { quiz } from "@/lib/prompts/quiz-creator"
+import { excel } from "@/lib/prompts/excel-expert"
 
 interface Persona {
   id: string
