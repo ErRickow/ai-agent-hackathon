@@ -1,6 +1,6 @@
 import * as React from "react";
-import { ScrollArea } from "@/components/ui/scroll-area";
-import { Textarea } from "@/components/ui/textarea";
+import {ScrollShadow} from "@heroui/react";
+import {Textarea} from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Loader2, Bot, User } from "lucide-react";
@@ -54,7 +54,7 @@ export default function ChatInterface({
   
   return (
     <>
-      <ScrollArea className="flex-1 p-4">
+      <ScrollShadow className="w-[300px] h-[400px]">
         <div className="space-y-4 max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-12">
@@ -143,16 +143,18 @@ export default function ChatInterface({
           )}
         </div>
         <div ref={messagesEndRef} />
-      </ScrollArea>
+      </ScrollShadow>
       <div className="p-4 border-t border-border">
         <div className="flex gap-2 max-w-4xl mx-auto">
           <Textarea
+            disableAnimation
+            disableAutosize
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
-            placeholder={`Chat with ${selectedPersona.name}...`}
+            placeholder={`ask ${selectedPersona.name}...`}
             className="min-h-[60px] resize-none font-mono"
-            disabled={isLoading}
+            isDisabled={isLoading}
           />
           <Tooltip>
             <TooltipTrigger asChild>
@@ -161,7 +163,7 @@ export default function ChatInterface({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Send message (Enter)</p>
+              <p>Kirim Pesan</p>
             </TooltipContent>
           </Tooltip>
         </div>
