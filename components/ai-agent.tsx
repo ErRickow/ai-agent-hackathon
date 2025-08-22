@@ -23,6 +23,8 @@ import {
   Globe,
   Volume2,
   RotateCcw,
+  Menu,
+  X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -410,42 +412,71 @@ function AIAgent() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen bg-background text-foreground">
-        <AISidebar
-          aiMode={aiMode}
-          setAIMode={setAIMode}
-          provider={provider}
-          setProvider={setProvider}
-          selectedPersona={selectedPersona}
-          predefinedPersonas={predefinedPersonas}
-          customSystemPrompt={customSystemPrompt}
-          setCustomSystemPrompt={setCustomSystemPrompt}
-          useCustomPrompt={useCustomPrompt}
-          setUseCustomPrompt={setUseCustomPrompt}
-          isSidebarOpen={isSidebarOpen}
-          setIsSidebarOpen={setIsSidebarOpen}
-          onSelectPersona={setSelectedPersona}
-          models = { models }
-          selectedModel = { selectedModel }
-          setSelectedModel = { setSelectedModel }
-        />
-        <div className="flex-1 flex flex-col">
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Button variant="ghost" size="sm" className="lg:hidden" onClick={() => setIsSidebarOpen(true)}>
-                  <PanelLeftClose className="w-5 h-5" />
+      <div className="flex h-screen bg-background text-foreground overflow-hidden">
+        {/* Mobile Sidebar Overlay */}
+        {isSidebarOpen && (
+          <div 
+            className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+            onClick={() => setIsSidebarOpen(false)}
+          />
+        )}
+        
+        {/* Sidebar */}
+        <div className={`
+          fixed lg:relative lg:translate-x-0 transition-transform duration-300 ease-in-out z-50
+          ${isSidebarOpen ? 'translate-x-0' : '-translate-x-full'}
+          w-80 sm:w-80 lg:w-80 xl:w-96 h-full
+        `}>
+          <AISidebar
+            aiMode={aiMode}
+            setAIMode={setAIMode}
+            provider={provider}
+            setProvider={setProvider}
+            selectedPersona={selectedPersona}
+            predefinedPersonas={predefinedPersonas}
+            customSystemPrompt={customSystemPrompt}
+            setCustomSystemPrompt={setCustomSystemPrompt}
+            useCustomPrompt={useCustomPrompt}
+            setUseCustomPrompt={setUseCustomPrompt}
+            isSidebarOpen={isSidebarOpen}
+            setIsSidebarOpen={setIsSidebarOpen}
+            onSelectPersona={setSelectedPersona}
+            models={models}
+            selectedModel={selectedModel}
+            setSelectedModel={setSelectedModel}
+          />
+        </div>
+
+        {/* Main Content */}
+        <div className="flex-1 flex flex-col min-w-0 w-full">
+          {/* Header */}
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm shrink-0">
+            <div className="flex items-center justify-between p-3 sm:p-4 gap-2">
+              {/* Left Section */}
+              <div className="flex items-center gap-2 sm:gap-3 min-w-0">
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  className="lg:hidden p-2 shrink-0" 
+                  onClick={() => setIsSidebarOpen(true)}
+                >
+                  <Menu className="w-5 h-5" />
                 </Button>
-                <div className="flex items-center gap-2">
+                
+                <div className="flex items-center gap-2 min-w-0">
                   {getModeIcon(aiMode)}
-                  <h2 className="font-semibold capitalize">{getModeTitle(aiMode)}</h2>
-                  <Badge variant="secondary" className="text-xs">
+                  <h2 className="font-semibold capitalize text-sm sm:text-base truncate">
+                    {getModeTitle(aiMode)}
+                  </h2>
+                  <Badge variant="secondary" className="text-xs shrink-0 hidden xs:inline-flex">
                     {provider === "lunos" ? "Lunos" : "Unli.dev"}
                   </Badge>
                 </div>
               </div>
-              <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-xs">
+
+              {/* Right Section */}
+              <div className="flex items-center gap-1 sm:gap-2 shrink-0">
+                <Badge variant="outline" className="text-xs max-w-24 sm:max-w-32 truncate">
                   {selectedPersona.name}
                 </Badge>
                 <Tooltip>
@@ -453,9 +484,10 @@ function AIAgent() {
                     <Button
                       variant="ghost"
                       size="sm"
+                      className="p-2"
                       onClick={() => {
                         setMessages([]);
-                        setImagePrompt("");
+                        setInput("");
                         setTtsText("");
                         setEmbeddingText("");
                         setVisionPrompt("");
@@ -472,7 +504,9 @@ function AIAgent() {
               </div>
             </div>
           </header>
-          <div className="flex-1 flex flex-col">
+
+          {/* Content Area */}
+          <div className="flex-1 flex flex-col min-h-0 overflow-hidden">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}
@@ -484,8 +518,8 @@ function AIAgent() {
                 setInput={setInput}
                 sendMessage={handleSendMessage}
                 handleKeyPress={handleKeyPress}
-                isImageGenMode = {isImageGenMode}
-                onImageGenToggle = {handleImageGenToggle}
+                isImageGenMode={isImageGenMode}
+                onImageGenToggle={handleImageGenToggle}
               />
             )}
             {aiMode === "vision" && (
