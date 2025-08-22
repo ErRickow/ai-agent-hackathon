@@ -1,24 +1,23 @@
 import { type NextRequest, NextResponse } from "next/server"
 
-// Lunos Client implementation
 class LunosClient {
   private apiKey: string
   private baseURL: string
-  private appId?: string
-
-  constructor(config: { apiKey: string; baseURL: string; appId?: string }) {
+  private appId ? : string
+  
+  constructor(config: { apiKey: string;baseURL: string;appId ? : string }) {
     this.apiKey = config.apiKey
     this.baseURL = config.baseURL
     this.appId = config.appId
   }
-
+  
   chat = {
     createCompletion: async (options: {
       model: string
-      messages: Array<{ role: string; content: string }>
-      max_tokens?: number
-      temperature?: number
-      stream?: boolean
+      messages: Array < { role: string;content: string } >
+        max_tokens ? : number
+      temperature ? : number
+      stream ? : boolean
     }) => {
       const response = await fetch(`${this.baseURL}/chat/completions`, {
         method: "POST",
@@ -29,34 +28,33 @@ class LunosClient {
         },
         body: JSON.stringify(options),
       })
-
+      
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
-
+      
       return response
     },
   }
 }
 
-// OpenAI-compatible client for Unli.dev
 class UnliClient {
   private apiKey: string
   private baseURL: string
-
-  constructor(config: { apiKey: string; baseURL: string }) {
+  
+  constructor(config: { apiKey: string;baseURL: string }) {
     this.apiKey = config.apiKey
     this.baseURL = config.baseURL
   }
-
+  
   chat = {
     completions: {
       create: async (options: {
         model: string
-        messages: Array<{ role: string; content: string }>
-        max_tokens?: number
-        temperature?: number
-        stream?: boolean
+        messages: Array < { role: string;content: string } >
+          max_tokens ? : number
+        temperature ? : number
+        stream ? : boolean
       }) => {
         const response = await fetch(`${this.baseURL}/chat/completions`, {
           method: "POST",
@@ -66,32 +64,33 @@ class UnliClient {
           },
           body: JSON.stringify(options),
         })
-
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`)
         }
-
+        
         return response
       },
     },
   }
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const { message, provider, messages, systemPrompt } = await request.json()
-
+    
     const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : []
     const allMessages = [...systemMessage, ...messages, { role: "user", content: message }]
-
+    
     let response: Response
-
+    
     if (provider === "lunos") {
       const client = new LunosClient({
         apiKey: process.env.LUNOS_KEY,
-        baseURL: "https://api.lunos.tech/v1",
+        appId: "er-project",
       })
-
+      
       response = await client.chat.createCompletion({
         model: "google/gemini-2.0-flash",
         messages: allMessages,
@@ -104,7 +103,7 @@ export async function POST(request: NextRequest) {
         apiKey: process.env.UNLI_KEY,
         baseURL: "https://api.unli.dev/v1",
       })
-
+      
       response = await client.chat.completions.create({
         model: "auto",
         messages: allMessages,
@@ -113,11 +112,11 @@ export async function POST(request: NextRequest) {
         stream: true,
       })
     }
-
-    // Create a readable stream for the response
+    
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
-
+    let buffer = ""
+    
     const stream = new ReadableStream({
       async start(controller) {
         const reader = response.body?.getReader()
@@ -125,34 +124,50 @@ export async function POST(request: NextRequest) {
           controller.close()
           return
         }
-
+        
         try {
           while (true) {
             const { done, value } = await reader.read()
-            if (done) break
-
-            const chunk = decoder.decode(value)
-            const lines = chunk.split("\n")
-
+            if (done) {
+              // Jika masih ada sisa di buffer setelah stream selesai, proses
+              if (buffer.length > 0) {
+                // Penanganan sisa buffer jika diperlukan, meskipun biasanya stream berakhir dengan newline
+              }
+              break
+            }
+            
+            // Tambahkan chunk baru ke buffer
+            buffer += decoder.decode(value, { stream: true })
+            
+            // Proses semua baris lengkap di dalam buffer
+            let boundary = buffer.lastIndexOf('\n')
+            if (boundary === -1) {
+              // Jika tidak ada newline, tunggu chunk berikutnya
+              continue;
+            }
+            
+            const lines = buffer.substring(0, boundary).split('\n');
+            buffer = buffer.substring(boundary + 1); // Simpan sisa chunk yang tidak lengkap
+            
             for (const line of lines) {
-              if (line.startsWith("data: ")) {
-                const data = line.slice(6).trim()
-                if (data === "[DONE]") {
-                  controller.enqueue(encoder.encode("data: [DONE]\n\n"))
-                  controller.close()
-                  return
+              if (line.trim() === "" || !line.startsWith("data:")) continue
+              
+              const data = line.slice(6).trim()
+              if (data === "[DONE]") {
+                controller.enqueue(encoder.encode("data: [DONE]\n\n"))
+                controller.close()
+                return
+              }
+              
+              try {
+                const parsed = JSON.parse(data)
+                const content = parsed.choices?.[0]?.delta?.content || ""
+                
+                if (content) {
+                  controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
                 }
-
-                try {
-                  const parsed = JSON.parse(data)
-                  const content = parsed.choices?.[0]?.delta?.content || ""
-
-                  if (content) {
-                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`))
-                  }
-                } catch (e) {
-                  // Skip invalid JSON
-                }
+              } catch (e) {
+                console.error("Gagal parse JSON dari stream:", e)
               }
             }
           }
@@ -164,10 +179,10 @@ export async function POST(request: NextRequest) {
         }
       },
     })
-
+    
     return new NextResponse(stream, {
       headers: {
-        "Content-Type": "text/plain; charset=utf-8",
+        "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
         Connection: "keep-alive",
       },

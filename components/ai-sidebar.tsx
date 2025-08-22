@@ -36,6 +36,7 @@ interface AISidebarProps {
   setUseCustomPrompt: (use: boolean) => void;
   isSidebarOpen: boolean;
   setIsSidebarOpen: (open: boolean) => void;
+  onSelectPersona: (persona: any) => void;
 }
 
 export default function AISidebar({
@@ -51,6 +52,7 @@ export default function AISidebar({
   setUseCustomPrompt,
   isSidebarOpen,
   setIsSidebarOpen,
+  onSelectPersona
 }: AISidebarProps) {
   const handleSelectPersona = (persona: any) => {
     onSelectPersona(persona);

@@ -36,6 +36,15 @@ import VisionInterface from "./vision-interface";
 import TTSInterface from "./tts-interface";
 import EmbeddingInterface from "./embedding-interface";
 
+interface Persona {
+  id: string;
+  name: string;
+  icon: React.ReactNode;
+  systemPrompt: string;
+  description: string;
+  color: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -359,6 +368,7 @@ function AIAgent() {
           setUseCustomPrompt={setUseCustomPrompt}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
+          onSelectPersona={setSelectedPersona}
         />
         <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">

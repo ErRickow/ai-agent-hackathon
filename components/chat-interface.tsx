@@ -121,6 +121,18 @@ export default function ChatInterface({
       minute: "2-digit",
     });
   };
+
+  // Fungsi untuk menentukan warna teks yang kontras
+  const getContrastingTextColor = (hexColor: string) => {
+    if (!hexColor) return '#FFFFFF';
+    const r = parseInt(hexColor.substr(1, 2), 16);
+    const g = parseInt(hexColor.substr(3, 2), 16);
+    const b = parseInt(hexColor.substr(5, 2), 16);
+    const yiq = ((r * 299) + (g * 587) + (b * 114)) / 1000;
+    return (yiq >= 128) ? '#000000' : '#FFFFFF';
+  };
+
+  const userTextColor = getContrastingTextColor(selectedPersona.color);
   
   return (
     <>
@@ -128,7 +140,10 @@ export default function ChatInterface({
       <div className="flex-1 overflow-auto p-4 space-y-4">
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
-            <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
+            <div 
+              className="w-16 h-16 rounded-full flex items-center justify-center"
+              style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
+            >
               {selectedPersona.icon}
             </div>
             <div className="space-y-2">
@@ -148,11 +163,11 @@ export default function ChatInterface({
             }`}
           >
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-                message.role === "user" 
-                  ? "bg-primary text-primary-foreground" 
-                  : "bg-muted"
-              }`}
+              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0`}
+              style={{
+                backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
+                color: message.role === 'user' ? userTextColor : 'var(--muted-foreground)',
+              }}
             >
               {message.role === "user" ? (
                 <User className="w-4 h-4" />
@@ -166,11 +181,11 @@ export default function ChatInterface({
               }`}
             >
               <div
-                className={`rounded-lg p-3 max-w-[80%] ${
-                  message.role === "user"
-                    ? "bg-primary text-primary-foreground ml-auto"
-                    : "bg-muted"
-                }`}
+                className={`rounded-lg p-3 max-w-[80%]`}
+                style={{
+                  backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
+                  color: message.role === 'user' ? userTextColor : 'var(--card-foreground)',
+                }}
               >
                 {message.type === "image" && message.imageUrl ? (
                   <div className="space-y-2">
