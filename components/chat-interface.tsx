@@ -1,10 +1,17 @@
 import * as React from "react";
-import {ScrollShadow} from "@heroui/react";
-import {Textarea} from "@heroui/react";
+import { ScrollShadow } from "@heroui/react";
+import { Textarea } from "@heroui/react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Send, Loader2, Bot, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import ReactMarkdown from "react-markdown";
+import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
+import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import remarkGfm from 'remark-gfm';
+import rehypeKatex from 'rehype-katex';
+import remarkMath from 'remark-math';
+import 'katex/dist/katex.min.css';
 
 interface Message {
   id: string;
@@ -47,6 +54,7 @@ export default function ChatInterface({
   handleKeyPress,
 }: ChatInterfaceProps) {
   const messagesEndRef = React.useRef < HTMLDivElement > (null);
+  const textareaRef = React.useRef < HTMLTextAreaElement > (null);
   
   React.useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -54,7 +62,7 @@ export default function ChatInterface({
   
   return (
     <>
-      <ScrollShadow className="flex-1 p-4 w-full h-auto lg:max-h-full">
+      <ScrollShadow className="flex-1 p-4 w-full h-auto max-h-[1000px] lg:max-h-full">
         <div className="space-y-4 max-w-4xl mx-auto">
           {messages.length === 0 && (
             <div className="text-center text-muted-foreground py-12">
@@ -88,7 +96,34 @@ export default function ChatInterface({
                     message.role === "user" ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground"
                   }`}
                 >
-                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">{message.content}</div>
+                  <div className="prose dark:prose-invert">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        code(props) {
+                          const { children, className, node, ...rest } = props;
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match ? (
+                            <SyntaxHighlighter
+                              {...rest}
+                              PreTag="div"
+                              language={match[1]}
+                              style={vscDarkPlus}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code {...rest} className={className}>
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {message.content}
+                    </ReactMarkdown>
+                  </div>
                   {message.imageUrl && (
                     <img
                       src={message.imageUrl || "/placeholder.svg"}
@@ -127,9 +162,33 @@ export default function ChatInterface({
                   </div>
                 </div>
                 <div className="rounded-lg p-4 bg-secondary text-secondary-foreground">
-                  <div className="whitespace-pre-wrap font-mono text-sm leading-relaxed">
-                    {streamingMessage}
-                    <span className="animate-pulse">▋</span>
+                  <div className="prose dark:prose-invert">
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm, remarkMath]}
+                      rehypePlugins={[rehypeKatex]}
+                      components={{
+                        code(props) {
+                          const { children, className, node, ...rest } = props;
+                          const match = /language-(\w+)/.exec(className || '');
+                          return match ? (
+                            <SyntaxHighlighter
+                              {...rest}
+                              PreTag="div"
+                              language={match[1]}
+                              style={vscDarkPlus}
+                            >
+                              {String(children).replace(/\n$/, '')}
+                            </SyntaxHighlighter>
+                          ) : (
+                            <code {...rest} className={className}>
+                              {children}
+                            </code>
+                          );
+                        },
+                      }}
+                    >
+                      {streamingMessage}
+                    </ReactMarkdown>
                   </div>
                   <div className="flex items-center gap-2 mt-3 text-xs opacity-70">
                     <Badge variant="outline" className="text-xs">
@@ -147,8 +206,6 @@ export default function ChatInterface({
       <div className="p-4 border-t border-border">
         <div className="flex gap-2 max-w-4xl mx-auto">
           <Textarea
-            disableAnimation
-            disableAutosize
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyPress={handleKeyPress}
