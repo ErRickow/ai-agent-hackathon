@@ -1,25 +1,34 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
+  Send,
   Bot,
-  Code2,
-  Cpu,
-  Eye,
-  Globe,
+  User,
+  Loader2,
+  Zap,
   ImageIcon,
+  Mic,
+  Eye,
+  Code2,
+  Settings,
+  Briefcase,
+  Heart,
+  Gamepad2,
+  GraduationCap,
+  Palette,
   Menu,
   MessageSquare,
-  Mic,
-  RotateCcw,
+  Cpu,
+  Globe,
   Volume2,
-  Zap,
+  RotateCcw,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { predefinedPersonas, Persona } from "./persona";
+import { predefinedPersonas } from "./persona"
 import AISidebar from "./ai-sidebar";
 import ChatInterface from "./chat-interface";
 import ImageGenerationInterface from "./image-generation-interface";
@@ -57,6 +66,11 @@ function AIAgent() {
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages, streamingMessage]);
 
   const sendMessage = async () => {
     if (!input.trim() || isLoading) return;
@@ -67,9 +81,6 @@ function AIAgent() {
       content: input.trim(),
       timestamp: new Date(),
     };
-
-    const currentInput = input.trim();
-    const messageHistory = [...messages];
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
@@ -84,16 +95,15 @@ function AIAgent() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          message: currentInput,
+          message: input.trim(),
           provider,
           systemPrompt,
-          messages: messageHistory.map((m) => ({ role: m.role, content: m.content })),
+          messages: messages.map((m) => ({ role: m.role, content: m.content })),
         }),
       });
 
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+        throw new Error("Failed to get response");
       }
 
       const reader = response.body?.getReader();
@@ -105,13 +115,13 @@ function AIAgent() {
           const { done, value } = await reader.read();
           if (done) break;
 
-          const chunk = decoder.decode(value, { stream: true });
+          const chunk = decoder.decode(value);
           const lines = chunk.split("\n");
 
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const data = line.slice(6);
-              if (data.trim() === "[DONE]") {
+              if (data === "[DONE]") {
                 break;
               }
               try {
@@ -121,36 +131,33 @@ function AIAgent() {
                   setStreamingMessage(fullResponse);
                 }
               } catch (e) {
-                // Ignore empty or invalid JSON chunks
               }
             }
           }
         }
       }
-      
-      const finalResponseContent = fullResponse.trim() || "Tidak ada jawaban yang diterima dari AI.";
-      
+
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: finalResponseContent,
+        content: fullResponse,
         timestamp: new Date(),
         provider,
       };
-      setMessages((prev) => [...prev, assistantMessage]);
 
-    } catch (error: any) {
-      console.error("Error sending message:", error);
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStreamingMessage("");
+    } catch (error) {
+      console.error("Error:", error);
       const errorMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Maaf, terjadi kesalahan saat memproses permintaan Anda: ${error.message}`,
+        content: "Maaf, terjadi kesalahan saat memproses permintaan Anda.",
         timestamp: new Date(),
         provider,
       };
       setMessages((prev) => [...prev, errorMessage]);
     } finally {
-      setStreamingMessage("");
       setIsLoading(false);
     }
   };
@@ -167,9 +174,6 @@ function AIAgent() {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate image");
-      }
 
       const imageMessage: Message = {
         id: Date.now().toString(),
@@ -202,9 +206,6 @@ function AIAgent() {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate speech");
-      }
 
       const audioMessage: Message = {
         id: Date.now().toString(),
@@ -237,9 +238,6 @@ function AIAgent() {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to generate embedding");
-      }
 
       const embeddingMessage: Message = {
         id: Date.now().toString(),
@@ -278,9 +276,6 @@ function AIAgent() {
       });
 
       const data = await response.json();
-      if (!response.ok) {
-        throw new Error(data.error || "Failed to analyze image");
-      }
 
       const visionMessage: Message = {
         id: Date.now().toString(),
@@ -300,7 +295,7 @@ function AIAgent() {
       setIsLoading(false);
     }
   };
-  
+
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
@@ -317,7 +312,37 @@ function AIAgent() {
       }
     }
   };
-  
+
+  const getModeIcon = (mode: AIMode) => {
+    switch (mode) {
+      case "chat":
+        return <MessageSquare className="w-4 h-4" />;
+      case "image":
+        return <ImageIcon className="w-4 h-4" />;
+      case "vision":
+        return <Eye className="w-4 h-4" />;
+      case "tts":
+        return <Mic className="w-4 h-4" />;
+      case "embedding":
+        return <Code2 className="w-4 h-4" />;
+    }
+  };
+
+  const getModeTitle = (mode: AIMode) => {
+    switch (mode) {
+      case "chat":
+        return "Chat";
+      case "image":
+        return "Image Generation";
+      case "vision":
+        return "Vision Analysis";
+      case "tts":
+        return "Text to Speech";
+      case "embedding":
+        return "Text Embeddings";
+    }
+  };
+
   return (
     <TooltipProvider>
       <div className="flex h-screen bg-background text-foreground">
@@ -334,7 +359,6 @@ function AIAgent() {
           setUseCustomPrompt={setUseCustomPrompt}
           isSidebarOpen={isSidebarOpen}
           setIsSidebarOpen={setIsSidebarOpen}
-          onSelectPersona={setSelectedPersona}
         />
         <div className="flex-1 flex flex-col">
           <header className="border-b border-border bg-card/50 backdrop-blur-sm">
@@ -344,30 +368,11 @@ function AIAgent() {
                   <Menu className="w-5 h-5" />
                 </Button>
                 <div className="flex items-center gap-2">
-                  <div className="flex gap-1">
-                    {[
-                      { id: "chat", label: "Chat", icon: MessageSquare },
-                      { id: "image", label: "Image Gen", icon: ImageIcon },
-                      { id: "vision", label: "Vision", icon: Eye },
-                      { id: "tts", label: "Text-to-Speech", icon: Volume2 },
-                      { id: "embedding", label: "Embeddings", icon: Zap },
-                    ].map(({ id, label, icon: Icon }) => (
-                      <Tooltip key={id}>
-                        <TooltipTrigger asChild>
-                          <Button
-                            variant={aiMode === id ? "default" : "ghost"}
-                            size="icon"
-                            onClick={() => setAIMode(id as any)}
-                          >
-                            <Icon className="w-4 h-4" />
-                          </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>{label}</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ))}
-                  </div>
+                  {getModeIcon(aiMode)}
+                  <h2 className="font-semibold capitalize">{getModeTitle(aiMode)}</h2>
+                  <Badge variant="secondary" className="text-xs">
+                    {provider === "lunos" ? "Lunos" : "Unli.dev"}
+                  </Badge>
                 </div>
               </div>
               <div className="flex items-center gap-2">
@@ -398,7 +403,7 @@ function AIAgent() {
               </div>
             </div>
           </header>
-          <div className="flex-1 flex flex-col overflow-hidden">
+          <div className="flex-1 flex flex-col">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}
