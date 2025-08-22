@@ -24,7 +24,6 @@ export function MessageAssistant({ children, selectedPersona }: MessageAssistant
   const [copied, setCopied] = React.useState(false);
   
   const copyToClipboard = () => {
-    // Implementasi copy to clipboard
     navigator.clipboard.writeText(children);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
