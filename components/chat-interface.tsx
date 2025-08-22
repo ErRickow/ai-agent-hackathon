@@ -11,6 +11,9 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import remarkBreaks from "remark-breaks";
 import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { ImageIcon } from "lucide-react";
 
 interface Message {
   id: string;
@@ -41,6 +44,8 @@ interface ChatInterfaceProps {
   setInput: (value: string) => void;
   sendMessage: () => void;
   handleKeyPress: (e: React.KeyboardEvent) => void;
+  isImageGenMode: boolean;
+  onImageGenToggle: (enabled: boolean) => void;
 }
 
 const markdownComponents = {
@@ -107,6 +112,8 @@ export default function ChatInterface({
   setInput,
   sendMessage,
   handleKeyPress,
+  isImageGenMode,
+  onImageGenToggle,
 }: ChatInterfaceProps) {
   const messagesContainerRef = useAutoScroll([messages, streamingMessage]);
   
@@ -261,13 +268,28 @@ export default function ChatInterface({
       </div>
 
       {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4">
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 space-y-3">
+        <div className="flex items-center space-x-2">
+          <Switch
+            id="image-generation-mode"
+            checked={isImageGenMode}
+            onCheckedChange={onImageGenToggle}
+          />
+          <Label htmlFor="image-generation-mode" className="flex items-center gap-2 text-sm text-muted-foreground">
+            <ImageIcon className="h-4 w-4" />
+            <span>Image Generation Mode</span>
+          </Label>
+        </div>
         <div className="flex gap-2">
           <Textarea
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
-            placeholder="Ketik pesan Anda..."
+            placeholder={
+              isImageGenMode 
+                ? "Describe the image you want to generate..." 
+                : "Type your message..."
+            }
             className="flex-1 min-h-[44px] max-h-32 resize-none"
             disabled={isLoading}
           />
@@ -287,11 +309,11 @@ export default function ChatInterface({
               </Button>
             </TooltipTrigger>
             <TooltipContent>
-              <p>Kirim pesan</p>
+              <p>Send message</p>
             </TooltipContent>
           </Tooltip>
         </div>
-      </div>
+      </div> 
     </>
   );
 }

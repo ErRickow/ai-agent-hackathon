@@ -31,7 +31,6 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { predefinedPersonas } from "./persona"
 import AISidebar from "./ai-sidebar";
 import ChatInterface from "./chat-interface";
-import ImageGenerationInterface from "./image-generation-interface";
 import VisionInterface from "./vision-interface";
 import TTSInterface from "./tts-interface";
 import EmbeddingInterface from "./embedding-interface";
@@ -62,7 +61,7 @@ interface Message {
 }
 
 type Provider = "lunos" | "unli";
-type AIMode = "chat" | "image" | "vision" | "tts" | "embedding";
+type AIMode = "chat" | "vision" | "tts" | "embedding";
 
 function AIAgent() {
   const [messages, setMessages] = useState<Message[]>([]);
@@ -73,7 +72,7 @@ function AIAgent() {
   const [provider, setProvider] = useState<Provider>("lunos");
   const [aiMode, setAIMode] = useState<AIMode>("chat");
   const [streamingMessage, setStreamingMessage] = useState("");
-  const [imagePrompt, setImagePrompt] = useState("");
+  
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
@@ -110,126 +109,143 @@ function AIAgent() {
     fetchModels();
   }, [provider]); // Dijalankan setiap kali 'provider' berubah
 
-  const sendMessage = async () => {
+  const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
-
+    
+    const currentInput = input.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
       role: "user",
-      content: input.trim(),
+      content: currentInput,
       timestamp: new Date(),
     };
-
+    
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    setStreamingMessage("");
-
-    try {
-      const systemPrompt = useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt;
-      const response = await fetch("/api/chat", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          message: input.trim(),
+    
+    if (isImageGenMode) {
+      // LOGIKA UNTUK IMAGE GENERATION
+      try {
+        const response = await fetch("/api/image", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt: currentInput, provider }),
+        });
+        
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || "Image generation failed");
+        }
+        
+        const data = await response.json();
+        const imageMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `Generated image for: "${currentInput}"`,
+          timestamp: new Date(),
           provider,
-          model: selectedModel,
-          systemPrompt,
-          messages: messages.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error("Failed to get response");
+          type: "image",
+          imageUrl: data.imageUrl,
+        };
+        setMessages((prev) => [...prev, imageMessage]);
+      } catch (error) {
+        console.error("Image generation error:", error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `Maaf, gagal membuat gambar. Error: ${error instanceof Error ? error.message : "Unknown error"}`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+      } finally {
+        setIsLoading(false);
+        setIsImageGenMode(false); // Matikan mode gambar setelah selesai
       }
-
-      const reader = response.body?.getReader();
-      const decoder = new TextDecoder();
-      let fullResponse = "";
-
-      if (reader) {
+    } else {
+      // LOGIKA UNTUK CHAT BIASA (TERMASUK STREAMING)
+      setStreamingMessage("");
+      try {
+        const systemPrompt = useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt;
+        const response = await fetch("/api/chat", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            message: currentInput,
+            provider,
+            model: selectedModel,
+            systemPrompt,
+            messages: messages.map((m) => ({ role: m.role, content: m.content })),
+          }),
+        });
+        
+        if (!response.ok || !response.body) {
+          throw new Error("Failed to get response from server.");
+        }
+        
+        const reader = response.body.getReader();
+        const decoder = new TextDecoder();
+        let fullResponse = "";
+        let buffer = "";
+        
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
-
-          const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
-
+          
+          buffer += decoder.decode(value, { stream: true });
+          
+          // Proses semua baris lengkap di dalam buffer
+          let boundary = buffer.lastIndexOf('\n');
+          if (boundary === -1) continue;
+          
+          const lines = buffer.substring(0, boundary).split('\n');
+          buffer = buffer.substring(boundary + 1); // Simpan sisa chunk yang tidak lengkap
+          
           for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const data = line.slice(6);
-              if (data === "[DONE]") {
-                break;
+            if (line.trim() === "" || !line.startsWith("data:")) continue;
+            
+            const data = line.slice(6).trim();
+            if (data === "[DONE]") {
+              // Keluar dari loop jika sudah selesai
+              break;
+            }
+            
+            try {
+              const parsed = JSON.parse(data);
+              if (parsed.content) {
+                fullResponse += parsed.content;
+                setStreamingMessage(fullResponse);
               }
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  fullResponse += parsed.content;
-                  setStreamingMessage(fullResponse);
-                }
-              } catch (e) {
-              }
+            } catch (e) {
+              console.error("Gagal parse JSON dari stream:", e);
             }
           }
         }
+        
+        const assistantMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: fullResponse,
+          timestamp: new Date(),
+          provider,
+        };
+        
+        setMessages((prev) => [...prev, assistantMessage]);
+        setStreamingMessage("");
+        
+      } catch (error) {
+        console.error("Chat error:", error);
+        const errorMessage: Message = {
+          id: (Date.now() + 1).toString(),
+          role: "assistant",
+          content: `Maaf, terjadi kesalahan. Coba lagi nanti.`,
+          timestamp: new Date(),
+        };
+        setMessages((prev) => [...prev, errorMessage]);
+        setStreamingMessage("");
+      } finally {
+        setIsLoading(false);
       }
-
-      const assistantMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: fullResponse,
-        timestamp: new Date(),
-        provider,
-      };
-
-      setMessages((prev) => [...prev, assistantMessage]);
-      setStreamingMessage("");
-    } catch (error) {
-      console.error("Error:", error);
-      const errorMessage: Message = {
-        id: (Date.now() + 1).toString(),
-        role: "assistant",
-        content: "Maaf, terjadi kesalahan saat memproses permintaan Anda.",
-        timestamp: new Date(),
-        provider,
-      };
-      setMessages((prev) => [...prev, errorMessage]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const generateImage = async () => {
-    if (!imagePrompt.trim() || isLoading) return;
-
-    setIsLoading(true);
-    try {
-      const response = await fetch("/api/image", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ prompt: imagePrompt, provider }),
-      });
-
-      const data = await response.json();
-
-      const imageMessage: Message = {
-        id: Date.now().toString(),
-        role: "assistant",
-        content: `Generated image: "${imagePrompt}"`,
-        timestamp: new Date(),
-        provider,
-        type: "image",
-        imageUrl: data.imageUrl,
-      };
-
-      setMessages((prev) => [...prev, imageMessage]);
-      setImagePrompt("");
-    } catch (error) {
-      console.error("Image generation error:", error);
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -346,18 +362,21 @@ function AIAgent() {
   const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      if (aiMode === "chat") {
-        sendMessage();
-      } else if (aiMode === "image") {
-        generateImage();
-      } else if (aiMode === "vision") {
+      if (aiMode === 'chat') {
+        handleSendMessage();
+      } else if (aiMode === 'vision') {
         analyzeImage();
-      } else if (aiMode === "tts") {
+      } else if (aiMode === 'tts') {
         generateSpeech();
-      } else if (aiMode === "embedding") {
+      } else if (aiMode === 'embedding') {
         generateEmbedding();
       }
     }
+  };
+
+  const handleImageGenToggle = (enabled: boolean) => {
+    setIsImageGenMode(enabled);
+    setInput("");
   };
 
   const getModeIcon = (mode: AIMode) => {
@@ -464,17 +483,10 @@ function AIAgent() {
                 isLoading={isLoading}
                 input={input}
                 setInput={setInput}
-                sendMessage={sendMessage}
+                sendMessage={handleSendMessage}
                 handleKeyPress={handleKeyPress}
-              />
-            )}
-            {aiMode === "image" && (
-              <ImageGenerationInterface
-                isLoading={isLoading}
-                imagePrompt={imagePrompt}
-                setImagePrompt={setImagePrompt}
-                generateImage={generateImage}
-                handleKeyPress={handleKeyPress}
+                isImageGenMode = {isImageGenMode}
+                onImageGenToggle = {handleImageGenToggle}
               />
             )}
             {aiMode === "vision" && (
