@@ -72,7 +72,7 @@ function AIAgent() {
   const [provider, setProvider] = useState<Provider>("lunos");
   const [aiMode, setAIMode] = useState<AIMode>("chat");
   const [streamingMessage, setStreamingMessage] = useState("");
-  
+  const [isImageGenMode, setIsImageGenMode] = useState(false);
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
