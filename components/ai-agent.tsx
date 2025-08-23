@@ -23,7 +23,7 @@ import {
   Globe,
   Volume2,
   RotateCcw,
-  Menu,
+  PanelLeftClose,
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -73,6 +73,7 @@ interface Message {
 const GUEST_ID_KEY = "ai_agent_guest_id";
 const GUEST_MESSAGE_COUNT_KEY = "ai_agent_guest_count";
 const MAX_GUEST_MESSAGES = 5;
+const SELECTED_MODEL_KEY = "ai_agent_selected_model";
 
 type Provider = "lunos" | "unli";
 type AIMode = "chat" | "tts" | "embedding";
@@ -155,26 +156,37 @@ function AIAgent() {
   useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingMessage]);
   
   useEffect(() => {
+    if (selectedModel) {
+      localStorage.setItem(SELECTED_MODEL_KEY, selectedModel);
+    }
+  }, [selectedModel]);
+  
+  useEffect(() => {
     const fetchModels = async () => {
       try {
         const response = await fetch(`/api/models?provider=${provider}`);
         const data = await response.json();
         if (data.models && data.models.length > 0) {
           setModels(data.models);
-          // Atur model default ke model pertama dalam daftar
-          setSelectedModel(data.models[0].id);
+          const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
+          if (savedModel && data.models.some((m: Model) => m.id === savedModel)) {
+            setSelectedModel(savedModel);
+          } else {
+            setSelectedModel(data.models[0].id);
+          }
         } else {
           setModels([]);
           setSelectedModel("");
         }
       } catch (error) {
+        toast.error("Gagal load model")
         console.error("Failed to fetch models:", error);
         setModels([]);
         setSelectedModel("");
       }
     };
     fetchModels();
-  }, [provider]); // Dijalankan setiap kali 'provider' berubah
+  }, [provider]);
 
   const generateImage = async () => {
     if (!input.trim() || isLoading) return;
@@ -196,6 +208,7 @@ function AIAgent() {
       });
 
       if (!response.ok) {
+        toast.warn(`API Error ${response.status}`)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
@@ -309,6 +322,7 @@ function AIAgent() {
               fullResponse += parsed.content || "";
               setStreamingMessage(fullResponse);
             } catch (e) {
+              toast.error("Terjadi kesalahan saat streaming")
               console.error("Stream parse error:", e, "on line:", line);
             }
           }
@@ -324,6 +338,7 @@ function AIAgent() {
       }
       
     } catch (error) {
+      toast.error("Terjadi Kesalahan, mohon bersabar")
       console.error("Chat error:", error);
       setMessages((prev) => prev.slice(0, -1)); // Rollback optimistic UI
     } finally {
@@ -344,6 +359,7 @@ function AIAgent() {
       });
       
       if (!response.ok) {
+        toast.error(`API error ${response.status}`)
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
@@ -366,6 +382,7 @@ function AIAgent() {
       setMessages((prev) => [...prev, audioMessage]);
       setTtsText("");
     } catch (error) {
+      toast.error("TTS ERROR mohon bersabar")
       console.error("TTS error:", error);
     } finally {
       setIsLoading(false);
@@ -400,6 +417,7 @@ function AIAgent() {
       setMessages((prev) => [...prev, embeddingMessage]);
       setEmbeddingText("");
     } catch (error) {
+      toast.error("Embeddings Error, mohon bersabar")
       console.error("Embedding error:", error);
     } finally {
       setIsLoading(false);
@@ -480,8 +498,10 @@ function AIAgent() {
   const handleLogout = async () => {
     const response = await fetch('/api/auth/logout', { method: 'POST' });
     if (response.ok) {
+      toast.success("Berhasil logout")
       window.location.reload();
     } else {
+      toast.error("Logout gagal")
       console.error("Logout failed");
     }
   };
@@ -566,7 +586,7 @@ function AIAgent() {
                   className="lg:hidden p-2 shrink-0" 
                   onClick={() => setIsSidebarOpen(true)}
                 >
-                  <Menu className="w-5 h-5" />
+                  <PanelLeftClose className="w-5 h-5" />
                 </Button>
                 
                 <div className="flex items-center gap-2 min-w-0">
@@ -574,9 +594,15 @@ function AIAgent() {
                   <h2 className="font-semibold capitalize text-sm sm:text-base truncate">
                     {getModeTitle(aiMode)}
                   </h2>
-                  <Badge variant="secondary" className="text-xs shrink-0 hidden xs:inline-flex">
-                    {provider === "lunos" ? "Lunos" : "Unli.dev"}
-                  </Badge>
+                  <a 
+                      href={provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Badge variant="secondary" className="text-xs shrink-0 hidden xs:inline-flex cursor-pointer hover:ring-2 hover:ring-primary/50">
+                        {provider === "lunos" ? "Lunos" : "Unli.dev"}
+                      </Badge>
+                    </a>
                 </div>
               </div>
 

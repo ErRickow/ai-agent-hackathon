@@ -109,6 +109,17 @@ const markdownComponents = {
   }
 };
 
+const BotAvatar = ({ persona, provider }: { persona: Persona;provider: "lunos" | "unli" }) => {
+  if (persona.id === "assistant") {
+    const faviconUrl = provider === "lunos" ?
+      "https://www.google.com/s2/favicons?sz=64&domain_url=https://lunos.tech" :
+      "https://www.google.com/s2/favicons?sz=64&domain_url=https://unli.dev";
+    return <img src={faviconUrl} alt={`${provider} icon`} className="w-4 h-4 rounded-full" />;
+  }
+  
+  return <>{persona.icon}</>;
+};
+
 export default function ChatInterface({
   messages,
   streamingMessage,
@@ -171,7 +182,7 @@ export default function ChatInterface({
               className="w-16 h-16 rounded-full flex items-center justify-center"
               style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
             >
-              {selectedPersona.icon}
+              <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
@@ -198,7 +209,7 @@ export default function ChatInterface({
               {message.role === "user" ? (
                 <User className="w-4 h-4" />
               ) : (
-                <Bot className="w-4 h-4" />
+                <BotAvatar persona={selectedPersona} provider={message.provider || provider} />
               )}
             </div>
 
@@ -239,10 +250,16 @@ export default function ChatInterface({
               <div className={`flex items-center gap-2 text-xs text-muted-foreground pt-1 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
-                  <Badge variant="outline" className="text-xs">
-                    {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
-                  </Badge>
-                )}
+                    <a 
+                      href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                    >
+                      <Badge variant="outline" className="text-xs cursor-pointer hover:ring-2 hover:ring-primary/50">
+                        {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
+                      </Badge>
+                    </a>
+                  )}
               </div>
             </div>
           </div>
@@ -252,7 +269,7 @@ export default function ChatInterface({
         {streamingMessage && (
           <div className="flex gap-4 items-start w-full">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-              <Bot className="w-4 h-4" />
+              <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="flex-1 space-y-1 min-w-0 flex flex-col items-start">
                <div className="font-semibold text-sm text-left w-full">
@@ -277,7 +294,7 @@ export default function ChatInterface({
         {isLoading && !streamingMessage && (
           <div className="flex gap-4 items-start w-full">
             <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
-              <Bot className="w-4 h-4" />
+              <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="flex-1 space-y-2 min-w-0 flex flex-col items-start">
                 <div className="font-semibold text-sm text-left w-full">

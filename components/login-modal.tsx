@@ -66,7 +66,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           <DialogTitle>{step === 'email' ? 'Login to Continue' : 'Enter Verification Code'}</DialogTitle>
           <DialogDescription>
             {step === 'email' 
-              ? 'You have reached the free message limit. Please enter your email to continue.'
+              ? 'Login To acces more message.'
               : `A code has been sent to ${email}. Please enter it below.`
             }
           </DialogDescription>

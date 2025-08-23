@@ -146,20 +146,23 @@ export async function POST(request: NextRequest) {
                 await setDoc(userChatRef, {
                   messages: [userMessagePayload, assistantMessagePayload],
                   lastActive: serverTimestamp(),
-                }, { merge: true }); // Gunakan merge untuk jaga-jaga
+                }, { merge: true });
               }
-              break; // Keluar dari loop
+              break; // Keluar dari loop setelah selesai
             }
             
-            let buffer = decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            let boundary = buffer.lastIndexOf('\n');
+            if (boundary === -1) continue;
+            
+            const lines = buffer.substring(0, boundary).split('\n');
+            buffer = buffer.substring(boundary + 1);
             
             for (const line of lines) {
               if (line.trim() === "" || !line.startsWith("data:")) continue;
               
               const data = line.slice(6).trim();
               if (data === "[DONE]") {
-                controller.enqueue(encoder.encode("data: [DONE]\n\n"));
                 continue;
               }
               
@@ -172,7 +175,7 @@ export async function POST(request: NextRequest) {
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
                 }
               } catch (e) {
-                console.error("Gagal parse JSON dari stream:", e);
+                console.error("Gagal parse JSON dari stream:", e, "Line:", line);
               }
             }
           }
@@ -182,6 +185,7 @@ export async function POST(request: NextRequest) {
         } finally {
           controller.close();
         }
+        // --- AKHIR PERUBAHAN ---
       },
     });
     
