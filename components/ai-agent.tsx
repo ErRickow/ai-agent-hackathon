@@ -98,7 +98,6 @@ function AIAgent() {
   const [user, setUser] = useState < User | null > (null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [guestMessageCount, setGuestMessageCount] = useState(0);
-  const [showLoginModal, setShowLoginModal] = useState(false);
   const messagesEndRef = useRef < HTMLDivElement > (null);
 
   // --- useEffect Hooks ---
