@@ -4,6 +4,8 @@ import { IBM_Plex_Sans, IBM_Plex_Mono } from "next/font/google"
 import "./globals.css"
 import { LayoutClient } from "./layout-client"
 import { TanstackQueryProvider } from "@/lib/tanstack-query/tanstack-query-provider"
+import { ThemeProvider } from "@/components/theme-provider"
+import { Toaster } from "sonner"
 
 const ibmPlexSans = IBM_Plex_Sans({
   subsets: ["latin"],
@@ -30,12 +32,20 @@ export default function RootLayout({
   children: React.React.Node
 } > ) {
   return (
-    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} dark`}>
+    <html lang="en" className={`${ibmPlexSans.variable} ${ibmPlexMono.variable} dark`} suppressHydrationWarning>
       <body className="font-sans antialiased">
-        <TanstackQueryProvider>
-          <LayoutClient />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <TanstackQueryProvider>
+            <LayoutClient />
             {children}
-        </TanstackQueryProvider>
+            <Toaster richColors />
+          </TanstackQueryProvider>
+        </ThemeProvider>
       </body>
     </html>
   )

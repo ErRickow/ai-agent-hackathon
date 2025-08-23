@@ -38,6 +38,7 @@ import EmbeddingInterface from "./embedding-interface";
 import { LoginModal } from './login-modal';
 import { db } from "@/lib/firebase";
 import { doc, onSnapshot } from "firebase/firestore";
+import { toast } from "sonner";
 
 interface Persona {
   id: string;
@@ -87,6 +88,7 @@ function AIAgent() {
   const [aiMode, setAIMode] = useState < AIMode > ("chat");
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isImageGenMode, setIsImageGenMode] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
   const [uploadedImage, setUploadedImage] = useState < string | null > (null);
@@ -123,6 +125,7 @@ function AIAgent() {
         }
       } catch (error) {
         console.error("Failed to check session:", error);
+        toast.error("Gagal cek session, mohon bersabar")
       }
     };
     checkSession();
@@ -174,12 +177,64 @@ function AIAgent() {
     fetchModels();
   }, [provider]); // Dijalankan setiap kali 'provider' berubah
 
-  const handleSendMessage = async () => {
+  const generateImage = async () => {
     if (!input.trim() || isLoading) return;
-    if (user) {
-      await sendAuthenticatedMessage();
+    setIsLoading(true);
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input,
+      timestamp: new Date(),
+    };
+    setMessages((prev) => [...prev, userMessage]);
+
+    try {
+      const response = await fetch("/api/image", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: input, provider }),
+      });
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: `Gambar berhasil dibuat untuk prompt: "${input}"`,
+        timestamp: new Date(),
+        provider,
+        type: "image",
+        imageUrl: data.imageUrl,
+      };
+
+      setMessages((prev) => [...prev, assistantMessage]);
+    } catch (error) {
+      console.error("Image generation error:", error);
+      toast.error("Gagal membuat gambar. Silakan coba lagi.");
+      // Rollback pesan pengguna jika gagal
+      setMessages((prev) => prev.slice(0, -1));
+    } finally {
+      setIsLoading(false);
+      setInput("");
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (uploadedImage) {
+      await analyzeImage();
+    } else if (isImageGenMode) {
+      await generateImage();
     } else {
-      await sendGuestMessage();
+      if (!input.trim() || isLoading) return;
+      if (user) {
+        await sendAuthenticatedMessage();
+      } else {
+        await sendGuestMessage();
+      }
     }
   };
   
@@ -353,36 +408,56 @@ function AIAgent() {
   };
 
   const analyzeImage = async () => {
-    if (!uploadedImage || !visionPrompt.trim() || isLoading) return;
-
+    if (!uploadedImage || !input.trim() || isLoading) return;
+    
     setIsLoading(true);
+    
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: input,
+      timestamp: new Date(),
+      type: "image",
+      imageUrl: uploadedImage,
+    };
+    setMessages((prev) => [...prev, userMessage]);
+    
+    const imageToSend = uploadedImage;
+    setInput("");
+    setUploadedImage(null);
+    
     try {
       const response = await fetch("/api/vision", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          image: uploadedImage,
-          prompt: visionPrompt,
-          provider,
+          image: imageToSend,
+          prompt: userMessage.content,
+          provider: "unli",
         }),
       });
-
+      
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || "Gagal menganalisis gambar.");
+      }
+      
       const data = await response.json();
-
-      const visionMessage: Message = {
-        id: Date.now().toString(),
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
         role: "assistant",
         content: data.analysis,
         timestamp: new Date(),
-        provider,
+        provider: "unli",
         type: "text",
       };
-
-      setMessages((prev) => [...prev, visionMessage]);
-      setVisionPrompt("");
-      setUploadedImage(null);
+      
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error("Vision error:", error);
+      toast.error((error as Error).message);
+      // Rollback jika gagal
+      setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
@@ -556,6 +631,7 @@ function AIAgent() {
                 handleKeyPress={handleKeyPress}
                 isImageGenMode={isImageGenMode}
                 onImageGenToggle={handleImageGenToggle}
+                uploadedImage = { uploadedImage } setUploadedImage = { setUploadedImage }
               />
             )}
             {aiMode === "vision" && (

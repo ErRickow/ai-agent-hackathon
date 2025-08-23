@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { Send, Bot, User, Loader2, Copy } from "lucide-react";
+import { Send, Bot, User, Loader2, Copy, Paperclip, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +52,8 @@ interface ChatInterfaceProps {
   handleKeyPress: (e: React.KeyboardEvent) => void;
   isImageGenMode: boolean;
   onImageGenToggle: (enabled: boolean) => void;
+  uploadedImage: string | null;
+  setUploadedImage: (value: string | null) => void;
 }
 
 const markdownComponents = {
@@ -116,8 +118,22 @@ export default function ChatInterface({
   handleKeyPress,
   isImageGenMode,
   onImageGenToggle,
+  uploadedImage,
+  setUploadedImage,
 }: ChatInterfaceProps) {
   const messagesContainerRef =useAutoScroll([messages, streamingMessage]);
+  const fileInputRef = React.useRef < HTMLInputElement > (null);
+  
+  const handleImageUpload = (e: React.ChangeEvent < HTMLInputElement > ) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        setUploadedImage(event.target?.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
   
   const formatTimestamp = (date: Date) => {
     return date.toLocaleTimeString("id-ID", {
@@ -274,65 +290,116 @@ export default function ChatInterface({
       </div>
 
               {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 space-y-3 w-full">
-        <div className="flex items-center space-x-2 flex-wrap">
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 w-full">
+        <div className="relative bg-background rounded-lg border">
+          {/* Image Preview Area */}
+          {uploadedImage && (
+            <div className="p-2 border-b">
+              <div className="relative w-20 h-20">
+                <img
+                  src={uploadedImage}
+                  alt="Preview"
+                  className="w-full h-full object-cover rounded"
+                />
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-muted hover:bg-destructive text-destructive-foreground"
+                  onClick={() => setUploadedImage(null)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
+      
+          {/* Textarea and Buttons */}
+          <div className="relative flex items-center">
+            <input
+              type="file"
+              ref={fileInputRef}
+              className="hidden"
+              accept="image/*"
+              onChange={handleImageUpload}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="shrink-0 ml-2"
+                  onClick={() => fileInputRef.current?.click()}
+                >
+                  <Paperclip className="w-4 h-4" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Attach Image</p>
+              </TooltipContent>
+            </Tooltip>
+            <Textarea
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={handleKeyPress}
+              maxLength={MAX_INPUT_LENGTH}
+              onPaste={(e) => {
+                e.preventDefault();
+                const pastedText = e.clipboardData.getData("text");
+                const currentText = e.currentTarget.value;
+                const remainingSpace = MAX_INPUT_LENGTH - currentText.length;
+                if (remainingSpace > 0) {
+                  const textToInsert = pastedText.substring(0, remainingSpace);
+                  setInput(currentText + textToInsert);
+                }
+              }}
+              placeholder={
+                uploadedImage
+                  ? "Ask something about the image..."
+                  : isImageGenMode
+                    ? `Describe an image to generate...`
+                    : `Type your message...`
+              }
+              className="flex-1 min-h-[44px] max-h-32 resize-none border-0 shadow-none focus-visible:ring-0"
+              disabled={isLoading}
+            />
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  onClick={sendMessage}
+                  disabled={isLoading || (!input.trim() && !uploadedImage)}
+                  size="icon"
+                  className="shrink-0 mr-2"
+                >
+                  {isLoading ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Send className="w-4 h-4" />
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Send message</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </div>
+        {/* Image Generation Mode Switch */}
+        <div className="flex items-center space-x-2 pt-3">
           <Switch
             id="image-generation-mode"
             checked={isImageGenMode}
             onCheckedChange={onImageGenToggle}
+            disabled={!!uploadedImage}
           />
-          <Label htmlFor="image-generation-mode" className="flex items-center gap-2 text-sm text-muted-foreground">
+          <Label
+            htmlFor="image-generation-mode"
+            className="flex items-center gap-2 text-sm text-muted-foreground"
+          >
             <ImageIcon className="h-4 w-4" />
-            <span>Image</span>
+            <span>Imagen</span>
           </Label>
         </div>
-        <div className="flex gap-2 w-full">
-          <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={handleKeyPress}
-            maxLength={MAX_INPUT_LENGTH}
-            onPaste={(e) => {
-              e.preventDefault();
-              const pastedText = e.clipboardData.getData('text');
-              const currentText = e.currentTarget.value;
-
-              const remainingSpace = MAX_INPUT_LENGTH - currentText.length;
-
-              if (remainingSpace > 0) {
-                const textToInsert = pastedText.substring(0, remainingSpace);
-                setInput(currentText + textToInsert);
-              }
-            }}
-            placeholder={
-              isImageGenMode 
-                ? `Describe the image... (max ${MAX_INPUT_LENGTH} chars)`
-                : `Type your message... (max ${MAX_INPUT_LENGTH} chars)`
-            }
-            className="flex-1 min-h-[44px] max-h-32 resize-none"
-            disabled={isLoading}
-          />
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                onClick={sendMessage}
-                disabled={!input.trim() || isLoading}
-                size="icon"
-                className="shrink-0"
-              >
-                {isLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Send className="w-4 h-4" />
-                )}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>Send message</p>
-            </TooltipContent>
-          </Tooltip>
-        </div>
-      </div> 
+      </div>
     </>
   );
 }
