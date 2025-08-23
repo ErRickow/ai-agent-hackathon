@@ -35,7 +35,9 @@ class LunosClient {
       })
       
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorBody = await response.json();
+        console.error("Lunos API Error:", errorBody);
+        throw new Error(`Lunos API Error: ${errorBody.error?.message || response.statusText}`);
       }
       
       return response
@@ -72,7 +74,9 @@ class UnliClient {
         })
         
         if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`)
+          const errorBody = await response.json();
+          console.error("Unli.dev API Error:", errorBody);
+          throw new Error(`Unli.dev API Error: ${errorBody.error?.message || response.statusText}`);
         }
         
         return response
@@ -81,12 +85,22 @@ class UnliClient {
   }
 }
 
+
 export async function POST(request: NextRequest) {
   try {
     const { guestId, message, provider, model, systemPrompt } = await request.json();
     
-    if (!guestId || !message) {
-      return NextResponse.json({ error: "Guest ID and message are required" }, { status: 400 });
+    if (!guestId || typeof guestId !== 'string') {
+      return NextResponse.json({ error: "Guest ID is missing or invalid" }, { status: 400 });
+    }
+    if (!message || typeof message !== 'string') {
+      return NextResponse.json({ error: "Message is missing or invalid" }, { status: 400 });
+    }
+    if (!provider || (provider !== 'lunos' && provider !== 'unli')) {
+      return NextResponse.json({ error: "Provider is missing or invalid" }, { status: 400 });
+    }
+    if (!model || typeof model !== 'string') {
+      return NextResponse.json({ error: "Model is missing or invalid" }, { status: 400 });
     }
     
     const guestRef = doc(db, "guests", guestId);
@@ -101,42 +115,20 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Message limit reached. Please log in." }, { status: 403 });
     }
     
-    const previousMessages = guestSnap.exists() ? guestSnap.data().messages || [] : [];
+    const previousMessages = guestSnap.exists() ? guestSnap.data().messages.map((m: any) => ({ role: m.role, content: m.content })) : [];
     const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : []
-    const messagesForApi = [...systemMessage, ...previousMessages.map((msg: any) => ({ role: msg.role, content: msg.content })), { role: "user", content: message }];
+    const messagesForApi = [...systemMessage, ...previousMessages, { role: "user", content: message }];
     
     let aiApiResponse: Response;
     
     if (provider === "lunos") {
-      const client = new LunosClient({
-        apiKey: process.env.LUNOS_KEY!,
-        baseURL: "https://api.lunos.tech/v1",
-        appId: "er-project",
-      })
-      
-      aiApiResponse = await client.chat.createCompletion({
-        model: model,
-        messages: messagesForApi,
-        max_tokens: 4024,
-        temperature: 0.7,
-        stream: true,
-      })
+      const client = new LunosClient({ apiKey: process.env.LUNOS_KEY!, baseURL: "https://api.lunos.tech/v1", appId: "er-project" });
+      aiApiResponse = await client.chat.createCompletion({ model, messages: messagesForApi, stream: true });
     } else {
-      const client = new UnliClient({
-        apiKey: process.env.UNLI_KEY!,
-        baseURL: "https://api.unli.dev/v1",
-      })
-      
-      aiApiResponse = await client.chat.completions.create({
-        model: model,
-        messages: messagesForApi,
-        max_tokens: 4024,
-        temperature: 0.7,
-        stream: true,
-      })
+      const client = new UnliClient({ apiKey: process.env.UNLI_KEY!, baseURL: "https://api.unli.dev/v1" });
+      aiApiResponse = await client.chat.completions.create({ model, messages: messagesForApi, stream: true });
     }
     
-    // Logika Streaming disalin dari /api/chat dan dimodifikasi untuk menyimpan hasil
     const encoder = new TextEncoder()
     const decoder = new TextDecoder()
     let buffer = ""
@@ -220,8 +212,8 @@ export async function POST(request: NextRequest) {
     });
     
   } catch (error) {
-    console.error("Guest Chat Error:", error);
-    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Guest Chat Route Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown server error.";
     return NextResponse.json({ error: "Internal Server Error", details: message }, { status: 500 });
   }
 }
