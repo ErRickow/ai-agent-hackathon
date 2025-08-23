@@ -248,8 +248,6 @@ export default function AISidebar({
               <div className="mt-3 space-y-2">
                 {[
                   { id: "chat", label: "Chat", icon: MessageSquare },
-                  { id: "image", label: "Image Gen", icon: ImageIcon },
-                  { id: "vision", label: "Vision", icon: Eye },
                   { id: "tts", label: "Text-to-Speech", icon: Volume2 },
                   { id: "embedding", label: "Embeddings", icon: Zap },
                 ].map(({ id, label, icon: Icon }) => (

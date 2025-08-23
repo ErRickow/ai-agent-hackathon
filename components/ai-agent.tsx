@@ -495,8 +495,6 @@ function AIAgent() {
     switch (mode) {
       case "chat":
         return <MessageSquare className="w-4 h-4" />;
-      case "vision":
-        return <Eye className="w-4 h-4" />;
       case "tts":
         return <Mic className="w-4 h-4" />;
       case "embedding":
@@ -508,8 +506,6 @@ function AIAgent() {
     switch (mode) {
       case "chat":
         return "Chat";
-      case "vision":
-        return "Vision Analysis";
       case "tts":
         return "Text to Speech";
       case "embedding":

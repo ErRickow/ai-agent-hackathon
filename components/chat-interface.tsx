@@ -18,7 +18,9 @@ import { useAutoScroll } from "@/lib/hooks/use-auto-scroll";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { ImageIcon } from "lucide-react";
-import { ButtonCopy } from "./button-copy"
+import { ButtonCopy } from "./button-copy";
+import { TextEffect } from "./core/text-effect";
+import { TextShimmer } from '@/components/core/text-shimmer';
 
 const MAX_INPUT_LENGTH = 2000;
 
@@ -172,10 +174,12 @@ export default function ChatInterface({
               {selectedPersona.icon}
             </div>
             <div className="space-y-2">
+              <TextEffect per='char' preset='fade'>
               <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
-              <p className="text-muted-foreground max-w-md">
+              </TextEffect>
+              <TextShimmer duration={1.2} className="text-muted-foreground max-w-md">
                 {selectedPersona.description}
-              </p>
+              </TextShimmer>
             </div>
           </div>
         )}
@@ -283,7 +287,9 @@ export default function ChatInterface({
                 </div>
                 <div className="flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span className="text-sm text-muted-foreground">{getLoadingText()}</span>
+                  <TextShimmer duration={1} className="text-sm text-muted-foreground">
+                 {/* <span className="text-sm text-muted-foreground">*/}{getLoadingText()}</TextShimmer>
+                 {/*</span>*/}
                 </div>
             </div>
           </div>
@@ -313,7 +319,22 @@ export default function ChatInterface({
               </div>
             </div>
           )}
-      
+          
+          <div className="flex items-center space-x-2 pt-3">
+            <Switch
+              id="image-generation-mode"
+              checked={isImageGenMode}
+              onCheckedChange={onImageGenToggle}
+              disabled={!!uploadedImage}
+            />
+            <Label
+              htmlFor="image-generation-mode"
+              className="flex items-center gap-2 text-sm text-muted-foreground"
+            >
+              <ImageIcon className="h-4 w-4" />
+              <span>Imagen</span>
+            </Label>
+          </div>
           {/* Textarea and Buttons */}
           <div className="relative flex items-center">
             <input
@@ -383,22 +404,6 @@ export default function ChatInterface({
               </TooltipContent>
             </Tooltip>
           </div>
-        </div>
-        {/* Image Generation Mode Switch */}
-        <div className="flex items-center space-x-2 pt-3">
-          <Switch
-            id="image-generation-mode"
-            checked={isImageGenMode}
-            onCheckedChange={onImageGenToggle}
-            disabled={!!uploadedImage}
-          />
-          <Label
-            htmlFor="image-generation-mode"
-            className="flex items-center gap-2 text-sm text-muted-foreground"
-          >
-            <ImageIcon className="h-4 w-4" />
-            <span>Imagen</span>
-          </Label>
         </div>
       </div>
     </>
