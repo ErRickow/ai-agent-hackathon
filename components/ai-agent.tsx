@@ -98,6 +98,7 @@ function AIAgent() {
   const [user, setUser] = useState < User | null > (null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [guestMessageCount, setGuestMessageCount] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
   const messagesEndRef = useRef < HTMLDivElement > (null);
 
   // --- useEffect Hooks ---
@@ -234,22 +235,30 @@ function AIAgent() {
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
+      let buffer = "";
       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
         
-        const chunk = decoder.decode(value, { stream: true });
-        const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
+        buffer += decoder.decode(value, { stream: true });
         
-        for (const line of lines) {
-          const data = line.replace(/^data: /, '').trim();
-          if (data === '[DONE]') continue;
-          try {
-            const parsed = JSON.parse(data);
-            fullResponse += parsed.content || "";
-            setStreamingMessage(fullResponse);
-          } catch (e) { console.error("Stream parse error:", e); }
+        let eolIndex;
+        while ((eolIndex = buffer.indexOf('\n')) >= 0) {
+          const line = buffer.slice(0, eolIndex).trim();
+          buffer = buffer.slice(eolIndex + 1);
+          
+          if (line.startsWith('data:')) {
+            const data = line.replace(/^data: /, '').trim();
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              fullResponse += parsed.content || "";
+              setStreamingMessage(fullResponse);
+            } catch (e) {
+              console.error("Stream parse error:", e, "on line:", line);
+            }
+          }
         }
       }
       
@@ -394,6 +403,15 @@ function AIAgent() {
       }
     }
   };
+  
+  const handleLogout = async () => {
+    const response = await fetch('/api/auth/logout', { method: 'POST' });
+    if (response.ok) {
+      window.location.reload();
+    } else {
+      console.error("Logout failed");
+    }
+  };
 
   const handleImageGenToggle = (enabled: boolean) => {
     setIsImageGenMode(enabled);
@@ -460,6 +478,9 @@ function AIAgent() {
             models={models}
             selectedModel={selectedModel}
             setSelectedModel={setSelectedModel}
+            user={user}
+            onLoginClick={() => setShowLoginModal(true)}
+            onLogoutClick={handleLogout}
           />
         </div>
 

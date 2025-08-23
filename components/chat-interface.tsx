@@ -19,6 +19,8 @@ import { Label } from "@/components/ui/label";
 import { ImageIcon } from "lucide-react";
 import { ButtonCopy } from "./button-copy"
 
+const MAX_INPUT_LENGTH = 2000;
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -289,10 +291,23 @@ export default function ChatInterface({
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={handleKeyPress}
+            maxLength={MAX_INPUT_LENGTH}
+            onPaste={(e) => {
+              e.preventDefault();
+              const pastedText = e.clipboardData.getData('text');
+              const currentText = e.currentTarget.value;
+
+              const remainingSpace = MAX_INPUT_LENGTH - currentText.length;
+
+              if (remainingSpace > 0) {
+                const textToInsert = pastedText.substring(0, remainingSpace);
+                setInput(currentText + textToInsert);
+              }
+            }}
             placeholder={
               isImageGenMode 
-                ? "Describe the image you..." 
-                : "Type your message..."
+                ? `Describe the image... (max ${MAX_INPUT_LENGTH} chars)`
+                : `Type your message... (max ${MAX_INPUT_LENGTH} chars)`
             }
             className="flex-1 min-h-[44px] max-h-32 resize-none"
             disabled={isLoading}

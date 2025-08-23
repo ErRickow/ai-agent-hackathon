@@ -43,6 +43,9 @@ interface AISidebarProps {
   models: Model[];
   selectedModel: string;
   setSelectedModel: (modelId: string) => void;
+  user: { id: string;email: string } | null;
+  onLoginClick: () => void;
+  onLogoutClick: () => void;
 }
 
 export default function AISidebar({
@@ -62,6 +65,9 @@ export default function AISidebar({
   models,
   selectedModel,
   setSelectedModel,
+  user,
+  onLoginClick,
+  onLogoutClick
 }: AISidebarProps) {
   const handleSelectPersona = (persona: any) => {
     onSelectPersona(persona);
@@ -78,6 +84,23 @@ export default function AISidebar({
           <p className="text-sm text-muted-foreground mt-1">Multi-modal AI Assistant</p>
         </div>
         <div className="flex-1 overflow-y-auto p-4 space-y-6">
+          { /* User Section */ }
+          <div className="mt-auto p-4 border-t border-border">
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-semibold truncate">{user.email}</p>
+                    <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={onLogoutClick}>
+                      Logout
+                    </Button>
+                  </div>
+                </div>
+              ) : (
+                <Button className="w-full" onClick={onLoginClick}>
+                  Login
+                </Button>
+              )}
+            </div>
           <div>
             <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">AI Mode</Label>
             <div className="mt-3 space-y-2">
@@ -204,6 +227,23 @@ export default function AISidebar({
             <p className="text-sm text-muted-foreground mt-1">Multi-modal AI Assistant</p>
           </div>
           <div className="flex-1 overflow-y-auto p-4 space-y-6">
+            { /* User Section */ }
+            <div className="mt-auto p-4 border-t border-border">
+                {user ? (
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold truncate">{user.email}</p>
+                      <Button variant="link" size="sm" className="p-0 h-auto text-xs" onClick={onLogoutClick}>
+                        Logout
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <Button className="w-full" onClick={onLoginClick}>
+                    Login
+                  </Button>
+                )}
+              </div>
             <div>
               <Label className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">AI Mode</Label>
               <div className="mt-3 space-y-2">
