@@ -18,7 +18,6 @@ import {
   Gamepad2,
   GraduationCap,
   Palette,
-  PanelLeftClose,
   MessageSquare,
   Globe,
   Volume2,
