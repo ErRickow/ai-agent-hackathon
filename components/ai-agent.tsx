@@ -69,6 +69,7 @@ interface Message {
   audioUrl?: string;
 }
 
+const GUEST_ID_KEY = "ai_agent_guest_id";
 const GUEST_MESSAGE_COUNT_KEY = "ai_agent_guest_count";
 const MAX_GUEST_MESSAGES = 5;
 
