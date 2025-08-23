@@ -340,7 +340,6 @@ export default function ChatInterface({
               id="image-generation-mode"
               checked={isImageGenMode}
               onCheckedChange={onImageGenToggle}
-              disabled={!!uploadedImage}
             />
             <Label
               htmlFor="image-generation-mode"
