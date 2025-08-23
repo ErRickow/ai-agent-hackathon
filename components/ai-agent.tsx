@@ -51,6 +51,11 @@ interface Model {
   name: string;
 }
 
+interface User {
+  id: string;
+  email: string;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
@@ -69,37 +74,74 @@ type Provider = "lunos" | "unli";
 type AIMode = "chat" | "vision" | "tts" | "embedding";
 
 function AIAgent() {
-  const [showLoginModal, setShowLoginModal] = useState(false);
-  // untuk kesederhanaan
-  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
-  const [guestMessageCount, setGuestMessageCount] = useState(0);
-  const [messages, setMessages] = useState<Message[]>([]);
+  // --- State ---
+  const [messages, setMessages] = useState < Message[] > ([]);
   const [models, setModels] = useState < Model[] > ([]);
   const [selectedModel, setSelectedModel] = useState < string > ("");
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [provider, setProvider] = useState<Provider>("lunos");
-  const [aiMode, setAIMode] = useState<AIMode>("chat");
+  const [provider, setProvider] = useState < Provider > ("lunos");
+  const [aiMode, setAIMode] = useState < AIMode > ("chat");
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isImageGenMode, setIsImageGenMode] = useState(false);
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
-  const [uploadedImage, setUploadedImage] = useState<string | null>(null);
+  const [uploadedImage, setUploadedImage] = useState < string | null > (null);
   const [visionPrompt, setVisionPrompt] = useState("");
-  const [selectedPersona, setSelectedPersona] = useState<Persona>(predefinedPersonas[0]);
+  const [selectedPersona, setSelectedPersona] = useState < Persona > (predefinedPersonas[0]);
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [user, setUser] = useState < User | null > (null);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  const [guestMessageCount, setGuestMessageCount] = useState(0);
+  const messagesEndRef = useRef < HTMLDivElement > (null);
 
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, streamingMessage]);
+  // --- useEffect Hooks ---
   
+  //Periksa sesi & muat data guest saat aplikasi dimuat
   useEffect(() => {
-    const count = parseInt(localStorage.getItem(GUEST_MESSAGE_COUNT_KEY) || "0");
-    setGuestMessageCount(count);
+    const checkSession = async () => {
+      try {
+        const response = await fetch('/api/auth/me');
+        const data = await response.json();
+        if (data.user) {
+          setUser(data.user);
+          localStorage.removeItem(GUEST_MESSAGE_COUNT_KEY);
+        } else {
+          const count = parseInt(localStorage.getItem(GUEST_MESSAGE_COUNT_KEY) || "0");
+          setGuestMessageCount(count);
+        }
+      } catch (error) {
+        console.error("Failed to check session:", error);
+      }
+    };
+    checkSession();
   }, []);
+  
+  // Muat riwayat obrolan berdasarkan status login
+  useEffect(() => {
+    if (user?.id) {
+      const unsub = onSnapshot(doc(db, "users", user.id), (doc) => {
+        const data = doc.data();
+        if (data && data.messages) {
+          const fetchedMessages = data.messages.map((msg: any) => ({
+            ...msg,
+            id: msg.timestamp.seconds + msg.role,
+            timestamp: msg.timestamp.toDate(),
+          }));
+          setMessages(fetchedMessages);
+        } else {
+          setMessages([]);
+        }
+      });
+      return () => unsub();
+    } else {
+      setMessages([]);
+    }
+  }, [user]);
+  
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingMessage]);
   
   useEffect(() => {
     const fetchModels = async () => {
@@ -125,151 +167,84 @@ function AIAgent() {
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
-
-    if (!isUserLoggedIn && guestMessageCount >= MAX_GUEST_MESSAGES) {
+    if (user) {
+      await sendAuthenticatedMessage();
+    } else {
+      await sendGuestMessage();
+    }
+  };
+  
+  const sendGuestMessage = async () => {
+    if (guestMessageCount >= MAX_GUEST_MESSAGES) {
       setShowLoginModal(true);
       return;
     }
-    
+    await processMessageStream("/api/guest-chat", false);
+  };
+  
+  const sendAuthenticatedMessage = async () => {
+    await processMessageStream("/api/chat", true);
+  };
+
+  const processMessageStream = async (endpoint: string, isAuthenticated: boolean) => {
     const currentInput = input.trim();
-    const userMessage: Message = {
-      id: Date.now().toString(),
-      role: "user",
-      content: currentInput,
-      timestamp: new Date(),
-    };
+    const userMessage: Message = { id: Date.now().toString(), role: "user", content: currentInput, timestamp: new Date() };
     
+    // Optimistic UI
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    
-    if (isImageGenMode) {
-      // LOGIKA UNTUK IMAGE GENERATION
-      try {
-        const response = await fetch("/api/image", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ prompt: currentInput, provider }),
-        });
-        
-        if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || "Image generation failed");
-        }
-        
-        const data = await response.json();
-        const imageMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Generated image for: "${currentInput}"`,
-          timestamp: new Date(),
-          provider,
-          type: "image",
-          imageUrl: data.imageUrl,
-        };
-        setMessages((prev) => [...prev, imageMessage]);
-      } catch (error) {
-        console.error("Image generation error:", error);
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Maaf, gagal membuat gambar. Error: ${error instanceof Error ? error.message : "Unknown error"}`,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-      } finally {
-        setIsLoading(false);
-        setIsImageGenMode(false); // Matikan mode gambar setelah selesai
+    setStreamingMessage("");
+
+    try {
+      const response = await fetch(endpoint, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          message: currentInput, provider, model: selectedModel,
+          systemPrompt: useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt,
+        }),
+      });
+
+      if (!response.ok || !response.body) {
+        if (response.status === 403) setShowLoginModal(true);
+        throw new Error("Failed to get response from server.");
       }
-    } else {
-      // LOGIKA UNTUK CHAT BIASA (TERMASUK STREAMING)
-      setStreamingMessage("");
-      try {
-        const systemPrompt = useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt;
-        const response = await fetch("/api/chat", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message: currentInput,
-            provider,
-            model: selectedModel,
-            systemPrompt,
-            messages: messages.map((m) => ({ role: m.role, content: m.content })),
-          }),
-        });
-        
-        if (!response.ok || !response.body) {
-          throw new Error("Failed to get response from server.");
-        }
-        
-        const reader = response.body.getReader();
-        const decoder = new TextDecoder();
-        let fullResponse = "";
-        let buffer = "";
-        
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
-          
-          buffer += decoder.decode(value, { stream: true });
-          
-          // Proses semua baris lengkap di dalam buffer
-          let boundary = buffer.lastIndexOf('\n');
-          if (boundary === -1) continue;
-          
-          const lines = buffer.substring(0, boundary).split('\n');
-          buffer = buffer.substring(boundary + 1); // Simpan sisa chunk yang tidak lengkap
-          
-          for (const line of lines) {
-            if (line.trim() === "" || !line.startsWith("data:")) continue;
-            
-            const data = line.slice(6).trim();
-            if (data === "[DONE]") {
-              // Keluar dari loop jika sudah selesai
-              break;
-            }
-            
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let fullResponse = "";
+      
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        // Logika parsing SSE
+        const chunk = decoder.decode(value, { stream: true });
+        const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
+        for (const line of lines) {
+            const data = line.replace(/^data: /, '').trim();
+            if (data === '[DONE]') continue;
             try {
-              const parsed = JSON.parse(data);
-              if (parsed.content) {
-                fullResponse += parsed.content;
+                const parsed = JSON.parse(data);
+                fullResponse += parsed.content || "";
                 setStreamingMessage(fullResponse);
-              }
-            } catch (e) {
-              console.error("Gagal parse JSON dari stream:", e);
-            }
-          }
+            } catch (e) { console.error("Stream parse error:", e); }
         }
-        
-        const assistantMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: fullResponse,
-          timestamp: new Date(),
-          provider,
-        };
-        
-        setMessages((prev) => [...prev, assistantMessage]);
-        if (!isUserLoggedIn) {
-          const newCount = guestMessageCount + 1;
-          setGuestMessageCount(newCount);
-          localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
-        }
-        setStreamingMessage("");
-        
-      } catch (error) {
-        console.error("Chat error:", error);
-        const errorMessage: Message = {
-          id: (Date.now() + 1).toString(),
-          role: "assistant",
-          content: `Maaf, terjadi kesalahan. Coba lagi nanti.`,
-          timestamp: new Date(),
-        };
-        setMessages((prev) => [...prev, errorMessage]);
-        setStreamingMessage("");
-      } finally {
-        setIsLoading(false);
       }
+      
+      if (!isAuthenticated) {
+        const assistantMessage: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: fullResponse, timestamp: new Date(), provider };
+        setMessages((prev) => [...prev, assistantMessage]);
+        const newCount = guestMessageCount + 1;
+        setGuestMessageCount(newCount);
+        localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
+      }
+    } catch (error) {
+      console.error("Chat error:", error);
+      setMessages((prev) => prev.slice(0, -1)); // Rollback optimistic UI
+    } finally {
+      setIsLoading(false);
+      setStreamingMessage("");
     }
   };
 

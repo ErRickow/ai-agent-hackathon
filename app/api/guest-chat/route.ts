@@ -1,8 +1,10 @@
 import { type NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
-import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { doc, getDoc, setDoc, updateDoc, arrayUnion, serverTimestamp, increment } from "firebase/firestore";
 
-// Klien untuk Lunos API
+const MAX_GUEST_MESSAGES = 5;
+
+// Kelas LunosClient disalin dari /api/chat/route.ts
 class LunosClient {
   private apiKey: string
   private baseURL: string
@@ -41,7 +43,7 @@ class LunosClient {
   }
 }
 
-// Klien untuk Unli.dev API
+// Kelas UnliClient disalin dari /api/chat/route.ts
 class UnliClient {
   private apiKey: string
   private baseURL: string
@@ -81,23 +83,26 @@ class UnliClient {
 
 export async function POST(request: NextRequest) {
   try {
-    // Ambil userId dari header yang ditambahkan oleh middleware
-    const userId = request.headers.get('x-user-id');
-    if (!userId) {
-      // Ini seharusnya tidak terjadi jika middleware berjalan benar
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    const { guestId, message, provider, model, systemPrompt } = await request.json();
+    
+    if (!guestId || !message) {
+      return NextResponse.json({ error: "Guest ID and message are required" }, { status: 400 });
     }
     
-    const { message, provider, model, systemPrompt } = await request.json();
+    const guestRef = doc(db, "guests", guestId);
+    const guestSnap = await getDoc(guestRef);
     
-    const userChatRef = doc(db, "users", userId);
-    const userChatSnap = await getDoc(userChatRef);
+    let messageCount = 0;
+    if (guestSnap.exists()) {
+      messageCount = guestSnap.data().messageCount || 0;
+    }
     
-    // Ambil riwayat pesan dari Firestore
-    const previousMessages = userChatSnap.exists() ? userChatSnap.data().messages || [] : [];
+    if (messageCount >= MAX_GUEST_MESSAGES) {
+      return NextResponse.json({ error: "Message limit reached. Please log in." }, { status: 403 });
+    }
     
-    // Siapkan pesan untuk dikirim ke API AI
-    const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
+    const previousMessages = guestSnap.exists() ? guestSnap.data().messages || [] : [];
+    const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : []
     const messagesForApi = [...systemMessage, ...previousMessages.map((msg: any) => ({ role: msg.role, content: msg.content })), { role: "user", content: message }];
     
     let aiApiResponse: Response;
@@ -107,19 +112,34 @@ export async function POST(request: NextRequest) {
         apiKey: process.env.LUNOS_KEY!,
         baseURL: "https://api.lunos.tech/v1",
         appId: "er-project",
-      });
-      aiApiResponse = await client.chat.createCompletion({ model, messages: messagesForApi, stream: true });
+      })
+      
+      aiApiResponse = await client.chat.createCompletion({
+        model: model,
+        messages: messagesForApi,
+        max_tokens: 4024,
+        temperature: 0.7,
+        stream: true,
+      })
     } else {
       const client = new UnliClient({
         apiKey: process.env.UNLI_KEY!,
         baseURL: "https://api.unli.dev/v1",
-      });
-      aiApiResponse = await client.chat.completions.create({ model, messages: messagesForApi, stream: true });
+      })
+      
+      aiApiResponse = await client.chat.completions.create({
+        model: model,
+        messages: messagesForApi,
+        max_tokens: 4024,
+        temperature: 0.7,
+        stream: true,
+      })
     }
     
-    // Logika Streaming
-    const encoder = new TextEncoder();
-    const decoder = new TextDecoder();
+    // Logika Streaming disalin dari /api/chat dan dimodifikasi untuk menyimpan hasil
+    const encoder = new TextEncoder()
+    const decoder = new TextDecoder()
+    let buffer = ""
     let fullResponseContent = "";
     
     const stream = new ReadableStream({
@@ -133,26 +153,14 @@ export async function POST(request: NextRequest) {
         try {
           while (true) {
             const { done, value } = await reader.read();
-            if (done) {
-              const userMessagePayload = { role: "user", content: message, timestamp: new Date() };
-              const assistantMessagePayload = { role: "assistant", content: fullResponseContent, timestamp: new Date(), provider };
-              
-              if (userChatSnap.exists()) {
-                await updateDoc(userChatRef, {
-                  messages: arrayUnion(userMessagePayload, assistantMessagePayload),
-                  lastActive: serverTimestamp(),
-                });
-              } else {
-                await setDoc(userChatRef, {
-                  messages: [userMessagePayload, assistantMessagePayload],
-                  lastActive: serverTimestamp(),
-                }, { merge: true }); // Gunakan merge untuk jaga-jaga
-              }
-              break; // Keluar dari loop
-            }
+            if (done) break;
             
-            let buffer = decoder.decode(value, { stream: true });
-            const lines = buffer.split('\n');
+            buffer += decoder.decode(value, { stream: true });
+            let boundary = buffer.lastIndexOf('\n');
+            if (boundary === -1) continue;
+            
+            const lines = buffer.substring(0, boundary).split('\n');
+            buffer = buffer.substring(boundary + 1);
             
             for (const line of lines) {
               if (line.trim() === "" || !line.startsWith("data:")) continue;
@@ -160,7 +168,8 @@ export async function POST(request: NextRequest) {
               const data = line.slice(6).trim();
               if (data === "[DONE]") {
                 controller.enqueue(encoder.encode("data: [DONE]\n\n"));
-                continue;
+                controller.close();
+                return;
               }
               
               try {
@@ -168,7 +177,7 @@ export async function POST(request: NextRequest) {
                 const content = parsed.choices?.[0]?.delta?.content || "";
                 
                 if (content) {
-                  fullResponseContent += content;
+                  fullResponseContent += content; // Akumulasi konten respons
                   controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content })}\n\n`));
                 }
               } catch (e) {
@@ -180,6 +189,23 @@ export async function POST(request: NextRequest) {
           console.error("Stream error:", error);
           controller.error(error);
         } finally {
+          const userMessagePayload = { role: "user", content: message, timestamp: new Date() };
+          const assistantMessagePayload = { role: "assistant", content: fullResponseContent, timestamp: new Date(), provider };
+          
+          if (guestSnap.exists()) {
+            await updateDoc(guestRef, {
+              messages: arrayUnion(userMessagePayload, assistantMessagePayload),
+              messageCount: increment(1),
+              lastActive: serverTimestamp(),
+            });
+          } else {
+            await setDoc(guestRef, {
+              messages: [userMessagePayload, assistantMessagePayload],
+              messageCount: 1,
+              createdAt: serverTimestamp(),
+              lastActive: serverTimestamp(),
+            });
+          }
           controller.close();
         }
       },
@@ -189,13 +215,13 @@ export async function POST(request: NextRequest) {
       headers: {
         "Content-Type": "text/event-stream",
         "Cache-Control": "no-cache",
-        "Connection": "keep-alive",
+        Connection: "keep-alive",
       },
     });
     
   } catch (error) {
-    console.error("Authenticated Chat Error:", error);
-    const message = error instanceof Error ? error.message : "Internal Server Error";
-    return NextResponse.json({ error: message }, { status: 500 });
+    console.error("Guest Chat Error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: "Internal Server Error", details: message }, { status: 500 });
   }
 }
