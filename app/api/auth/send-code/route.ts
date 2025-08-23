@@ -2,7 +2,6 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 
-// Fungsi untuk membuat kode OTP 6 digit
 const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export async function POST(request: NextRequest) {
@@ -11,18 +10,21 @@ export async function POST(request: NextRequest) {
     if (!email) {
       return NextResponse.json({ error: "Email is required" }, { status: 400 });
     }
-
+    
     const code = generateOTP();
-    const expires = new Date(Date.now() + 10 * 60 * 1000);
-
+    const expires = new Date(Date.now() + 10 * 60 * 1000); 
+    
     await addDoc(collection(db, "auth_codes"), {
       email,
       code,
       expires,
     });
-
+    
     const apiKey = process.env.MAILRY_API_KEY;
-
+    if (!apiKey) {
+      throw new Error("MAILRY_API_KEY environment variable is not set.");
+    }
+    
     const mailryPayload = {
       to: email,
       subject: `Your Verification Code: ${code}`,
@@ -44,15 +46,22 @@ export async function POST(request: NextRequest) {
       },
       body: JSON.stringify(mailryPayload),
     });
-
+    
+    // --- PERUBAHAN DI SINI ---
     if (!mailryResponse.ok) {
-        throw new Error("Failed to send email via Mailry.");
+      const errorBody = await mailryResponse.json();
+      console.error("Mailry API Error:", errorBody);
+      
+      throw new Error(
+        `Failed to send email via Mailry. Status: ${mailryResponse.status}. Message: ${errorBody.message || 'No specific error message provided.'}`
+      );
     }
-
+    
     return NextResponse.json({ message: "Verification code sent. Please check your email." });
-
+    
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Failed to send verification code." }, { status: 500 });
+    console.error("API Route Error:", error);
+    const message = error instanceof Error ? error.message : "An unknown error occurred.";
+    return NextResponse.json({ error: "Failed to send verification code.", details: message }, { status: 500 });
   }
 }
