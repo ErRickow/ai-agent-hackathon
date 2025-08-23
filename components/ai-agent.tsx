@@ -1,8 +1,7 @@
 "use client";
 
 import type React from "react";
-import React from 'react'
-import { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Send,
   Bot,
