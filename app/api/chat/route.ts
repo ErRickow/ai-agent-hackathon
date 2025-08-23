@@ -81,10 +81,8 @@ class UnliClient {
 
 export async function POST(request: NextRequest) {
   try {
-    // Ambil userId dari header yang ditambahkan oleh middleware
     const userId = request.headers.get('x-user-id');
     if (!userId) {
-      // Ini seharusnya tidak terjadi jika middleware berjalan benar
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     
@@ -93,10 +91,8 @@ export async function POST(request: NextRequest) {
     const userChatRef = doc(db, "users", userId);
     const userChatSnap = await getDoc(userChatRef);
     
-    // Ambil riwayat pesan dari Firestore
     const previousMessages = userChatSnap.exists() ? userChatSnap.data().messages || [] : [];
     
-    // Siapkan pesan untuk dikirim ke API AI
     const systemMessage = systemPrompt ? [{ role: "system", content: systemPrompt }] : [];
     const messagesForApi = [...systemMessage, ...previousMessages.map((msg: any) => ({ role: msg.role, content: msg.content })), { role: "user", content: message }];
     
@@ -117,10 +113,10 @@ export async function POST(request: NextRequest) {
       aiApiResponse = await client.chat.completions.create({ model, messages: messagesForApi, stream: true });
     }
     
-    // Logika Streaming
     const encoder = new TextEncoder();
     const decoder = new TextDecoder();
     let fullResponseContent = "";
+    let buffer = "";
     
     const stream = new ReadableStream({
       async start(controller) {
@@ -134,21 +130,7 @@ export async function POST(request: NextRequest) {
           while (true) {
             const { done, value } = await reader.read();
             if (done) {
-              const userMessagePayload = { role: "user", content: message, timestamp: new Date() };
-              const assistantMessagePayload = { role: "assistant", content: fullResponseContent, timestamp: new Date(), provider };
-              
-              if (userChatSnap.exists()) {
-                await updateDoc(userChatRef, {
-                  messages: arrayUnion(userMessagePayload, assistantMessagePayload),
-                  lastActive: serverTimestamp(),
-                });
-              } else {
-                await setDoc(userChatRef, {
-                  messages: [userMessagePayload, assistantMessagePayload],
-                  lastActive: serverTimestamp(),
-                }, { merge: true });
-              }
-              break; // Keluar dari loop setelah selesai
+              break;
             }
             
             buffer += decoder.decode(value, { stream: true });
@@ -179,13 +161,44 @@ export async function POST(request: NextRequest) {
               }
             }
           }
+          
+          try {
+            const userMessagePayload = {
+              role: "user",
+              content: message,
+              timestamp: new Date()
+            };
+            const assistantMessagePayload = {
+              role: "assistant",
+              content: fullResponseContent,
+              timestamp: new Date(),
+              provider
+            };
+            
+            if (userChatSnap.exists()) {
+              await updateDoc(userChatRef, {
+                messages: arrayUnion(userMessagePayload, assistantMessagePayload),
+                lastActive: serverTimestamp(),
+              });
+            } else {
+              await setDoc(userChatRef, {
+                messages: [userMessagePayload, assistantMessagePayload],
+                lastActive: serverTimestamp(),
+              }, { merge: true });
+            }
+            
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
+          } catch (dbError) {
+            console.error("Error saving to Firestore:", dbError);
+            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ error: "Failed to save message" })}\n\n`));
+          }
+          
         } catch (error) {
           console.error("Stream error:", error);
           controller.error(error);
         } finally {
           controller.close();
         }
-        // --- AKHIR PERUBAHAN ---
       },
     });
     
