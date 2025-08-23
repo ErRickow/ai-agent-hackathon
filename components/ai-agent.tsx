@@ -69,7 +69,6 @@ type Provider = "lunos" | "unli";
 type AIMode = "chat" | "vision" | "tts" | "embedding";
 
 function AIAgent() {
-  const [guestMessageCount, setGuestMessageCount] = useState(0);
   const [showLoginModal, setShowLoginModal] = useState(false);
   // untuk kesederhanaan
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
