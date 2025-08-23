@@ -35,6 +35,7 @@ import ChatInterface from "./chat-interface";
 import VisionInterface from "./vision-interface";
 import TTSInterface from "./tts-interface";
 import EmbeddingInterface from "./embedding-interface";
+import { LoginModal } from './login-modal';
 
 interface Persona {
   id: string;
@@ -61,10 +62,18 @@ interface Message {
   audioUrl?: string;
 }
 
+const GUEST_MESSAGE_COUNT_KEY = "ai_agent_guest_count";
+const MAX_GUEST_MESSAGES = 5;
+
 type Provider = "lunos" | "unli";
 type AIMode = "chat" | "vision" | "tts" | "embedding";
 
 function AIAgent() {
+  const [guestMessageCount, setGuestMessageCount] = useState(0);
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  // untuk kesederhanaan
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(false);
+  const [guestMessageCount, setGuestMessageCount] = useState(0);
   const [messages, setMessages] = useState<Message[]>([]);
   const [models, setModels] = useState < Model[] > ([]);
   const [selectedModel, setSelectedModel] = useState < string > ("");
@@ -87,6 +96,11 @@ function AIAgent() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, streamingMessage]);
+  
+  useEffect(() => {
+    const count = parseInt(localStorage.getItem(GUEST_MESSAGE_COUNT_KEY) || "0");
+    setGuestMessageCount(count);
+  }, []);
   
   useEffect(() => {
     const fetchModels = async () => {
@@ -112,6 +126,11 @@ function AIAgent() {
 
   const handleSendMessage = async () => {
     if (!input.trim() || isLoading) return;
+
+    if (!isUserLoggedIn && guestMessageCount >= MAX_GUEST_MESSAGES) {
+      setShowLoginModal(true);
+      return;
+    }
     
     const currentInput = input.trim();
     const userMessage: Message = {
@@ -232,6 +251,11 @@ function AIAgent() {
         };
         
         setMessages((prev) => [...prev, assistantMessage]);
+        if (!isUserLoggedIn) {
+          const newCount = guestMessageCount + 1;
+          setGuestMessageCount(newCount);
+          localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
+        }
         setStreamingMessage("");
         
       } catch (error) {
@@ -550,6 +574,7 @@ function AIAgent() {
           </div>
         </div>
       </div>
+      <LoginModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </TooltipProvider>
   );
 }
