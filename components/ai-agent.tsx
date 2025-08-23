@@ -75,7 +75,7 @@ const GUEST_MESSAGE_COUNT_KEY = "ai_agent_guest_count";
 const MAX_GUEST_MESSAGES = 5;
 
 type Provider = "lunos" | "unli";
-type AIMode = "chat" | "vision" | "tts" | "embedding";
+type AIMode = "chat" | "tts" | "embedding";
 
 function AIAgent() {
   // --- State ---
@@ -91,7 +91,6 @@ function AIAgent() {
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
-  const [uploadedImage, setUploadedImage] = useState < string | null > (null);
   const [visionPrompt, setVisionPrompt] = useState("");
   const [selectedPersona, setSelectedPersona] = useState < Persona > (predefinedPersonas[0]);
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
@@ -632,17 +631,6 @@ function AIAgent() {
                 isImageGenMode={isImageGenMode}
                 onImageGenToggle={handleImageGenToggle}
                 uploadedImage = { uploadedImage } setUploadedImage = { setUploadedImage }
-              />
-            )}
-            {aiMode === "vision" && (
-              <VisionInterface
-                isLoading={isLoading}
-                uploadedImage={uploadedImage}
-                setUploadedImage={setUploadedImage}
-                visionPrompt={visionPrompt}
-                setVisionPrompt={setVisionPrompt}
-                analyzeImage={analyzeImage}
-                handleKeyPress={handleKeyPress}
               />
             )}
             {aiMode === "tts" && (
