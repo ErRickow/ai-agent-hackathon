@@ -111,7 +111,13 @@ function AIAgent() {
         if (data.user) {
           setUser(data.user);
           localStorage.removeItem(GUEST_MESSAGE_COUNT_KEY);
+          localStorage.removeItem(GUEST_ID_KEY);
         } else {
+          let guestId = localStorage.getItem(GUEST_ID_KEY);
+          if (!guestId) {
+            guestId = crypto.randomUUID();
+            localStorage.setItem(GUEST_ID_KEY, guestId);
+          }
           const count = parseInt(localStorage.getItem(GUEST_MESSAGE_COUNT_KEY) || "0");
           setGuestMessageCount(count);
         }
