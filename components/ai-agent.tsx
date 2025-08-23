@@ -36,6 +36,8 @@ import VisionInterface from "./vision-interface";
 import TTSInterface from "./tts-interface";
 import EmbeddingInterface from "./embedding-interface";
 import { LoginModal } from './login-modal';
+import { db } from "@/lib/firebase";
+import { doc, onSnapshot } from "firebase/firestore";
 
 interface Persona {
   id: string;
