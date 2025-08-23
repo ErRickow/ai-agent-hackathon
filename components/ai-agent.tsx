@@ -190,47 +190,59 @@ function AIAgent() {
 
   const processMessageStream = async (endpoint: string, isAuthenticated: boolean) => {
     const currentInput = input.trim();
-    const userMessage: Message = { id: Date.now().toString(), role: "user", content: currentInput, timestamp: new Date() };
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      role: "user",
+      content: currentInput,
+      timestamp: new Date(),
+    };
     
     // Optimistic UI
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
     setStreamingMessage("");
-
+    
     try {
       const response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          message: currentInput, provider, model: selectedModel,
+          // guestId hanya dikirim jika itu adalah guest
+          ...(!isAuthenticated && { guestId: localStorage.getItem(GUEST_ID_KEY) }),
+          message: currentInput,
+          provider,
+          model: selectedModel,
           systemPrompt: useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt,
         }),
       });
-
-      if (!response.ok || !response.body) {
-        if (response.status === 403) setShowLoginModal(true);
-        throw new Error("Failed to get response from server.");
+      
+      if (!response.ok) {
+        if (response.status === 403 || response.status === 401) {
+          setShowLoginModal(true);
+        }
+        throw new Error(`Server error: ${response.status}`);
       }
-
-      const reader = response.body.getReader();
+      
+      const reader = response.body!.getReader();
       const decoder = new TextDecoder();
       let fullResponse = "";
       
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
-        // Logika parsing SSE
+        
         const chunk = decoder.decode(value, { stream: true });
         const lines = chunk.split('\n').filter(line => line.trim().startsWith('data:'));
+        
         for (const line of lines) {
-            const data = line.replace(/^data: /, '').trim();
-            if (data === '[DONE]') continue;
-            try {
-                const parsed = JSON.parse(data);
-                fullResponse += parsed.content || "";
-                setStreamingMessage(fullResponse);
-            } catch (e) { console.error("Stream parse error:", e); }
+          const data = line.replace(/^data: /, '').trim();
+          if (data === '[DONE]') continue;
+          try {
+            const parsed = JSON.parse(data);
+            fullResponse += parsed.content || "";
+            setStreamingMessage(fullResponse);
+          } catch (e) { console.error("Stream parse error:", e); }
         }
       }
       
@@ -241,6 +253,7 @@ function AIAgent() {
         setGuestMessageCount(newCount);
         localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
       }
+      
     } catch (error) {
       console.error("Chat error:", error);
       setMessages((prev) => prev.slice(0, -1)); // Rollback optimistic UI
