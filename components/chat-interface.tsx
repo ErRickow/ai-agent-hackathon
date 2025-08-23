@@ -174,10 +174,8 @@ export default function ChatInterface({
               {selectedPersona.icon}
             </div>
             <div className="space-y-2">
-              <TextEffect per='char' preset='fade'>
               <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
-              </TextEffect>
-              <TextShimmer duration={1.2} className="text-muted-foreground max-w-md">
+              <TextShimmer duration={1} className="text-muted-foreground max-w-md">
                 {selectedPersona.description}
               </TextShimmer>
             </div>
