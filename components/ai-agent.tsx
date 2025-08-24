@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import React, { useState, useRef, useEffect, useCallback, useMemo } from "react";
+import React, { useState, useRef, useEffect } from "react";
 import {
   Send,
   Bot,
@@ -79,40 +79,31 @@ type AIMode = "chat" | "tts" | "embedding";
 
 function AIAgent() {
   // --- State ---
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [models, setModels] = useState<Model[]>([]);
-  const [selectedModel, setSelectedModel] = useState<string>("");
+  const [messages, setMessages] = useState < Message[] > ([]);
+  const [models, setModels] = useState < Model[] > ([]);
+  const [selectedModel, setSelectedModel] = useState < string > ("");
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [provider, setProvider] = useState<Provider>("lunos");
-  const [aiMode, setAIMode] = useState<AIMode>("chat");
+  const [provider, setProvider] = useState < Provider > ("lunos");
+  const [aiMode, setAIMode] = useState < AIMode > ("chat");
   const [streamingMessage, setStreamingMessage] = useState("");
   const [isImageGenMode, setIsImageGenMode] = useState(false);
   const [uploadedImage, setUploadedImage] = useState<string | null>(null);
   const [ttsText, setTtsText] = useState("");
   const [embeddingText, setEmbeddingText] = useState("");
   const [visionPrompt, setVisionPrompt] = useState("");
-  const [selectedPersona, setSelectedPersona] = useState<Persona>(predefinedPersonas[0]);
+  const [selectedPersona, setSelectedPersona] = useState < Persona > (predefinedPersonas[0]);
   const [customSystemPrompt, setCustomSystemPrompt] = useState("");
   const [useCustomPrompt, setUseCustomPrompt] = useState(false);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState < User | null > (null);
   const [showLoginModal, setShowLoginModal] = useState(false);
   const [guestMessageCount, setGuestMessageCount] = useState(0);
-  const [isStreamingActive, setIsStreamingActive] = useState(false);
-  
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const streamingMessageRef = useRef<string>("");
-  const abortControllerRef = useRef<AbortController | null>(null);
-
-  // --- Optimized scroll behavior ---
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, []);
+  const messagesEndRef = useRef < HTMLDivElement > (null);
 
   // --- useEffect Hooks ---
   
-  // Periksa sesi & muat data guest saat aplikasi dimuat
+  //Periksa sesi & muat data guest saat aplikasi dimuat
   useEffect(() => {
     const checkSession = async () => {
       try {
@@ -161,11 +152,7 @@ function AIAgent() {
     }
   }, [user]);
   
-  // Optimized scroll effect - debounced
-  useEffect(() => {
-    const timer = setTimeout(scrollToBottom, 100);
-    return () => clearTimeout(timer);
-  }, [messages, streamingMessage, scrollToBottom]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: "smooth" }); }, [messages, streamingMessage]);
   
   useEffect(() => {
     if (selectedModel) {
@@ -173,45 +160,34 @@ function AIAgent() {
     }
   }, [selectedModel]);
   
-  // Optimized model fetching
-  const fetchModels = useCallback(async () => {
-    try {
-      const response = await fetch(`/api/models?provider=${provider}`);
-      const data = await response.json();
-      if (data.models && data.models.length > 0) {
-        setModels(data.models);
-        const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
-        if (savedModel && data.models.some((m: Model) => m.id === savedModel)) {
-          setSelectedModel(savedModel);
+  useEffect(() => {
+    const fetchModels = async () => {
+      try {
+        const response = await fetch(`/api/models?provider=${provider}`);
+        const data = await response.json();
+        if (data.models && data.models.length > 0) {
+          setModels(data.models);
+          const savedModel = localStorage.getItem(SELECTED_MODEL_KEY);
+          if (savedModel && data.models.some((m: Model) => m.id === savedModel)) {
+            setSelectedModel(savedModel);
+          } else {
+            setSelectedModel(data.models[0].id);
+          }
         } else {
-          setSelectedModel(data.models[0].id);
+          setModels([]);
+          setSelectedModel("");
         }
-      } else {
+      } catch (error) {
+        toast.error("Gagal load model")
+        console.error("Failed to fetch models:", error);
         setModels([]);
         setSelectedModel("");
       }
-    } catch (error) {
-      toast.error("Gagal load model")
-      console.error("Failed to fetch models:", error);
-      setModels([]);
-      setSelectedModel("");
-    }
+    };
+    fetchModels();
   }, [provider]);
 
-  useEffect(() => {
-    fetchModels();
-  }, [fetchModels]);
-
-  // Cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (abortControllerRef.current) {
-        abortControllerRef.current.abort();
-      }
-    };
-  }, []);
-
-  const handleDeleteMessage = useCallback(async (messageId: string) => {
+  const handleDeleteMessage = async (messageId: string) => {
     try {
       const response = await fetch('/api/messages', {
         method: 'DELETE',
@@ -227,9 +203,9 @@ function AIAgent() {
       console.error(error);
       toast.error("Gagal menghapus pesan.");
     }
-  }, []);
+  };
 
-  const handleResetConversation = useCallback(async () => {
+  const handleResetConversation = async () => {
     try {
       const response = await fetch('/api/messages', {
         method: 'DELETE',
@@ -245,9 +221,9 @@ function AIAgent() {
       console.error(error);
       toast.error("Gagal mereset percakapan.");
     }
-  }, []);
+  };
 
-  const generateImage = useCallback(async () => {
+  const generateImage = async () => {
     if (!input.trim() || isLoading) return;
     setIsLoading(true);
 
@@ -275,7 +251,7 @@ function AIAgent() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Gambar berhasil dibuat untuk prompt: "${input}"\n\nDuplikat web ini kalo kamu malas ngoding [https://github.com/ErRickow/ai-agent-hackathon](PENCET!)`,
+        content: `Gambar berhasil dibuat untuk prompt: "${input}"\n\n`,
         timestamp: new Date(),
         provider,
         type: "image",
@@ -286,47 +262,42 @@ function AIAgent() {
     } catch (error) {
       console.error("Image generation error:", error);
       toast.error("Gagal membuat gambar. Silakan coba lagi.");
+      // Rollback pesan pengguna jika gagal
       setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
       setInput("");
     }
-  }, [input, isLoading, provider]);
+  };
 
-  const handleSendMessage = useCallback(async () => {
+  const handleSendMessage = async () => {
     if (uploadedImage) {
       await analyzeImage();
     } else if (isImageGenMode) {
       await generateImage();
     } else {
-      if (!input.trim() || isLoading || isStreamingActive) return;
+      if (!input.trim() || isLoading) return;
       if (user) {
         await sendAuthenticatedMessage();
       } else {
         await sendGuestMessage();
       }
     }
-  }, [uploadedImage, isImageGenMode, input, isLoading, isStreamingActive, user]);
+  };
   
-  const sendGuestMessage = useCallback(async () => {
+  const sendGuestMessage = async () => {
     if (guestMessageCount >= MAX_GUEST_MESSAGES) {
       setShowLoginModal(true);
       return;
     }
     await processMessageStream("/api/guest-chat", false);
-  }, [guestMessageCount]);
+  };
   
-  const sendAuthenticatedMessage = useCallback(async () => {
+  const sendAuthenticatedMessage = async () => {
     await processMessageStream("/api/chat", true);
-  }, []);
+  };
 
-  const processMessageStream = useCallback(async (endpoint: string, isAuthenticated: boolean) => {
-    // Reset streaming state
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    abortControllerRef.current = new AbortController();
-
+  const processMessageStream = async (endpoint: string, isAuthenticated: boolean) => {
     const currentInput = input.trim();
     const userMessage: Message = {
       id: Date.now().toString(),
@@ -335,13 +306,10 @@ function AIAgent() {
       timestamp: new Date(),
     };
     
-    // Optimistic UI
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
     setIsLoading(true);
-    setIsStreamingActive(true);
     setStreamingMessage("");
-    streamingMessageRef.current = "";
     
     try {
       const response = await fetch(endpoint, {
@@ -354,7 +322,6 @@ function AIAgent() {
           model: selectedModel,
           systemPrompt: useCustomPrompt ? customSystemPrompt : selectedPersona.systemPrompt,
         }),
-        signal: abortControllerRef.current.signal,
       });
       
       if (!response.ok) {
@@ -366,77 +333,63 @@ function AIAgent() {
       
       const reader = response.body!.getReader();
       const decoder = new TextDecoder();
+      let fullResponse = "";
       let buffer = "";
       
-      try {
-        while (true) {
-          const { done, value } = await reader.read();
-          if (done) break;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        
+        buffer += decoder.decode(value, { stream: true });
+        
+        let eolIndex;
+        while ((eolIndex = buffer.indexOf('\n')) >= 0) {
+          const line = buffer.slice(0, eolIndex).trim();
+          buffer = buffer.slice(eolIndex + 1);
           
-          buffer += decoder.decode(value, { stream: true });
-          
-          let eolIndex;
-          while ((eolIndex = buffer.indexOf('\n')) >= 0) {
-            const line = buffer.slice(0, eolIndex).trim();
-            buffer = buffer.slice(eolIndex + 1);
-            
-            if (line.startsWith('data:')) {
-              const data = line.replace(/^data: /, '').trim();
-              if (data === '[DONE]') continue;
-              try {
-                const parsed = JSON.parse(data);
-                if (parsed.content) {
-                  streamingMessageRef.current += parsed.content;
-                  // Throttle streaming updates for better performance
-                  setStreamingMessage(streamingMessageRef.current);
-                }
-              } catch (e) {
-                console.error("Stream parse error:", e, "on line:", line);
-              }
+          if (line.startsWith('data:')) {
+            const data = line.replace(/^data: /, '').trim();
+            if (data === '[DONE]') continue;
+            try {
+              const parsed = JSON.parse(data);
+              fullResponse += parsed.content || "";
+              setStreamingMessage(fullResponse);
+            } catch (e) {
+              toast.error("Terjadi kesalahan saat streaming")
+              console.error("Stream parse error:", e, "on line:", line);
             }
           }
         }
-      } finally {
-        await reader.cancel();
       }
       
-      // Only add the final message if streaming completed successfully
-      if (!abortControllerRef.current.signal.aborted && streamingMessageRef.current) {
+      if (!isAuthenticated) {
         const assistantMessage: Message = {
           id: (Date.now() + 1).toString(),
           role: "assistant",
-          content: streamingMessageRef.current,
+          content: fullResponse,
           timestamp: new Date(),
           provider,
         };
-        
         setMessages((prev) => [...prev, assistantMessage]);
-        
-        if (!isAuthenticated) {
-          const newCount = guestMessageCount + 1;
-          setGuestMessageCount(newCount);
-          localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
-        }
       }
       
-    } catch (error: any) {
-      if (error.name === 'AbortError') {
-        console.log('Stream aborted');
-        return;
+      if (!isAuthenticated) {
+        const newCount = guestMessageCount + 1;
+        setGuestMessageCount(newCount);
+        localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
       }
-      toast.error("Terjadi Kesalahan, mohon bersabar");
+      
+    } catch (error) {
+      toast.error("Terjadi Kesalahan, mohon bersabar")
       console.error("Chat error:", error);
-      setMessages((prev) => prev.slice(0, -1)); // Rollback optimistic UI
+      setMessages((prev) => prev.slice(0, -1)); // Rollback pesan pengguna jika ada error
     } finally {
       setIsLoading(false);
-      setIsStreamingActive(false);
       setStreamingMessage("");
-      streamingMessageRef.current = "";
-      abortControllerRef.current = null;
     }
-  }, [input, provider, selectedModel, useCustomPrompt, customSystemPrompt, selectedPersona.systemPrompt, guestMessageCount]);
+  };
 
-  const generateSpeech = useCallback(async () => {
+  const generateSpeech = async () => {
     if (!ttsText.trim() || isLoading) return;
     
     setIsLoading(true);
@@ -452,7 +405,10 @@ function AIAgent() {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
       
+      // 1. Dapatkan audio sebagai Blob
       const audioBlob = await response.blob();
+      
+      // 2. Buat Object URL dari Blob
       const audioUrl = URL.createObjectURL(audioBlob);
       
       const audioMessage: Message = {
@@ -473,9 +429,9 @@ function AIAgent() {
     } finally {
       setIsLoading(false);
     }
-  }, [ttsText, isLoading, provider]);
+  };
 
-  const generateEmbedding = useCallback(async () => {
+  const generateEmbedding = async () => {
     if (!embeddingText.trim() || isLoading) return;
 
     setIsLoading(true);
@@ -508,9 +464,9 @@ function AIAgent() {
     } finally {
       setIsLoading(false);
     }
-  }, [embeddingText, isLoading, provider]);
+  };
 
-  const analyzeImage = useCallback(async () => {
+  const analyzeImage = async () => {
     if (!uploadedImage || !input.trim() || isLoading) return;
     
     setIsLoading(true);
@@ -559,13 +515,14 @@ function AIAgent() {
     } catch (error) {
       console.error("Vision error:", error);
       toast.error((error as Error).message);
+      // Rollback jika gagal
       setMessages((prev) => prev.slice(0, -1));
     } finally {
       setIsLoading(false);
     }
-  }, [uploadedImage, input, isLoading]);
+  };
 
-  const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
+  const handleKeyPress = (e: React.KeyboardEvent) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       if (aiMode === 'chat') {
@@ -578,9 +535,9 @@ function AIAgent() {
         generateEmbedding();
       }
     }
-  }, [aiMode, handleSendMessage, analyzeImage, generateSpeech, generateEmbedding]);
+  };
   
-  const handleLogout = useCallback(async () => {
+  const handleLogout = async () => {
     const response = await fetch('/api/auth/logout', { method: 'POST' });
     if (response.ok) {
       toast.success("Berhasil logout")
@@ -589,32 +546,14 @@ function AIAgent() {
       toast.error("Logout gagal")
       console.error("Logout failed");
     }
-  }, []);
+  };
 
-  const handleImageGenToggle = useCallback((enabled: boolean) => {
+  const handleImageGenToggle = (enabled: boolean) => {
     setIsImageGenMode(enabled);
     setInput("");
-  }, []);
+  };
 
-  const handleClearAll = useCallback(() => {
-    // Abort any ongoing streaming
-    if (abortControllerRef.current) {
-      abortControllerRef.current.abort();
-    }
-    
-    setMessages([]);
-    setInput("");
-    setTtsText("");
-    setEmbeddingText("");
-    setVisionPrompt("");
-    setUploadedImage(null);
-    setStreamingMessage("");
-    setIsStreamingActive(false);
-    streamingMessageRef.current = "";
-  }, []);
-
-  // Memoized components to prevent unnecessary re-renders
-  const getModeIcon = useMemo(() => (mode: AIMode) => {
+  const getModeIcon = (mode: AIMode) => {
     switch (mode) {
       case "chat":
         return <MessageSquare className="w-4 h-4" />;
@@ -623,9 +562,9 @@ function AIAgent() {
       case "embedding":
         return <Code2 className="w-4 h-4" />;
     }
-  }, []);
+  };
 
-  const getModeTitle = useMemo(() => (mode: AIMode) => {
+  const getModeTitle = (mode: AIMode) => {
     switch (mode) {
       case "chat":
         return "Chat";
@@ -634,7 +573,7 @@ function AIAgent() {
       case "embedding":
         return "Text Embeddings";
     }
-  }, []);
+  };
 
   return (
     <TooltipProvider>
@@ -720,7 +659,14 @@ function AIAgent() {
                       variant="ghost"
                       size="sm"
                       className="p-2"
-                      onClick={handleClearAll}
+                      onClick={() => {
+                        setMessages([]);
+                        setInput("");
+                        setTtsText("");
+                        setEmbeddingText("");
+                        setVisionPrompt("");
+                        setUploadedImage(null);
+                      }}
                     >
                       <RotateCcw className="w-4 h-4" />
                     </Button>

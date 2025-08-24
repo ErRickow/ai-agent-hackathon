@@ -4,54 +4,54 @@ import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/firebase";
 import { collection, addDoc } from "firebase/firestore";
 
-const generateOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
+const buatKodeOTP = () => Math.floor(100000 + Math.random() * 900000).toString();
 
 export async function POST(request: NextRequest) {
   try {
     const { email } = await request.json();
     if (!email) {
-      return NextResponse.json({ error: "Email is required" }, { status: 400 });
+      return NextResponse.json({ error: "Email wajib diisi" }, { status: 400 });
     }
     
-    const code = generateOTP();
-    const expires = new Date(Date.now() + 10 * 60 * 1000);
+    const kode = buatKodeOTP();
+    const kadaluarsa = new Date(Date.now() + 10 * 60 * 1000);
     
     await addDoc(collection(db, "auth_codes"), {
       email,
-      code,
-      expires,
+      code: kode,
+      expires: kadaluarsa,
     });
     
     const apiKey = process.env.MAILRY_API_KEY;
     if (!apiKey) {
-      throw new Error("MAILRY_API_KEY environment variable is not set.");
+      throw new Error("MAILRY_API_KEY environment variable belum diatur.");
     }
     
-    // --- PERUBAHAN DI SINI: Konten Email Dibuat Lebih Natural ---
+    // --- Konten Email dalam Bahasa Indonesia ---
     const mailryPayload = {
       to: email,
-      subject: `Here is your login code for AI Agent Hackathon`, // Subjek lebih personal
+      subject: `Kode login Anda untuk Agentic Merdeka`,
       htmlBody: `
         <div style="font-family: sans-serif; padding: 20px; color: #333;">
-          <h2 style="color: #4A90E2;">Welcome to Agentic Merdeka!</h2>
+          <h2 style="color: #4A90E2;">Selamat datang di Agentic Merdeka!</h2>
           <p>Halo,</p>
-          <p>You requested to log in to our application. Please use the following code to complete your login process:</p>
-          <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333; margin: 20px 0;">${code}</p>
-          <p>This code is valid for the next 10 minutes. If you did not request this, you can safely ignore this email.</p>
-          <p>Thanks,<br/>The AI Agent Hackathon Team</p>
+          <p>Anda meminta untuk masuk ke aplikasi kami. Silakan gunakan kode berikut untuk menyelesaikan proses login Anda:</p>
+          <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333; margin: 20px 0;">${kode}</p>
+          <p>Kode ini berlaku selama 10 menit ke depan. Jika Anda tidak meminta ini, Anda dapat mengabaikan email ini dengan aman.</p>
+          <p>Terima kasih,<br/>Tim AI Agent Hackathon</p>
           <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
-          <p style="font-size: 12px; color: #999;">If you're having trouble, please contact our support. Remember to check your spam/junk folder if you don't see our emails in your inbox.</p>
+          <p style="font-size: 12px; color: #999;">Jika Anda mengalami kesulitan, silakan hubungi dukungan kami. Ingat untuk memeriksa folder spam/junk jika Anda tidak melihat email kami di kotak masuk.</p>
         </div>
       `,
       plainBody: `
-        Welcome to AI Agent Hackathon!
+        Selamat datang di AI Agent Hackathon!
         
-        Your login code is: ${code}
+        Kode login Anda adalah: ${kode}
         
-        This code is valid for the next 10 minutes. If you did not request this, please ignore this email.
+        Kode ini berlaku selama 10 menit ke depan. Jika Anda tidak meminta ini, silakan abaikan email ini.
         
-        Thanks,
-        This Auth Is To Participate An Event AI Hackathon Special Hut RI 2025 🎉
+        Terima kasih,
+        Autentikasi ini untuk berpartisipasi dalam event AI Hackathon Spesial HUT RI 2025 🎉
       `
     };
     
@@ -66,15 +66,15 @@ export async function POST(request: NextRequest) {
     
     if (!mailryResponse.ok) {
       const errorBody = await mailryResponse.json();
-      console.error("Mailry API Error:", errorBody);
-      throw new Error(`Mailry Error: ${errorBody.message || 'Failed to send email.'}`);
+      console.error("Kesalahan API Mailry:", errorBody);
+      throw new Error(`Kesalahan Mailry: ${errorBody.message || 'Gagal mengirim email.'}`);
     }
     
-    return NextResponse.json({ message: "Verification code sent. Please check your email." });
+    return NextResponse.json({ message: "Kode verifikasi telah dikirim. Silakan periksa email Anda." });
     
   } catch (error) {
-    console.error("API Route Error:", error);
-    const message = error instanceof Error ? error.message : "An unknown error occurred.";
-    return NextResponse.json({ error: "Failed to send verification code.", details: message }, { status: 500 });
+    console.error("Kesalahan API Route:", error);
+    const message = error instanceof Error ? error.message : "Terjadi kesalahan yang tidak diketahui.";
+    return NextResponse.json({ error: "Gagal mengirim kode verifikasi.", details: message }, { status: 500 });
   }
 }
