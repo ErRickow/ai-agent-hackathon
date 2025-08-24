@@ -364,9 +364,18 @@ function AIAgent() {
         }
       }
       
+      const assistantMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        role: "assistant",
+        content: fullResponse,
+        timestamp: new Date(),
+        provider,
+      };
+      
+      setMessages((prev) => [...prev, assistantMessage]);
+      setStreamingMessage("");
+      
       if (!isAuthenticated) {
-        const assistantMessage: Message = { id: (Date.now() + 1).toString(), role: "assistant", content: fullResponse, timestamp: new Date(), provider };
-        setMessages((prev) => [...prev, assistantMessage]);
         const newCount = guestMessageCount + 1;
         setGuestMessageCount(newCount);
         localStorage.setItem(GUEST_MESSAGE_COUNT_KEY, newCount.toString());
@@ -378,7 +387,6 @@ function AIAgent() {
       setMessages((prev) => prev.slice(0, -1)); // Rollback optimistic UI
     } finally {
       setIsLoading(false);
-      setStreamingMessage("");
     }
   };
 
@@ -691,6 +699,7 @@ function AIAgent() {
                 setUploadedImage={setUploadedImage}
                 onDeleteMessage={handleDeleteMessage}
                 onResetConversation={handleResetConversation}
+                user={user}
               />
             )}
             {aiMode === "tts" && (
