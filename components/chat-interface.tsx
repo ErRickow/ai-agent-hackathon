@@ -179,8 +179,9 @@ export default function ChatInterface({
   setUploadedImage,
   onDeleteMessage,
   onResetConversation,
+  user,
 }: ChatInterfaceProps) {
-  const messagesContainerRef = useAutoScroll([messages.length, streamingMessage]);
+  const messagesContainerRef = useAutoScroll([messages, streamingMessage]);
   const fileInputRef = React.useRef<HTMLInputElement>(null);
   
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
