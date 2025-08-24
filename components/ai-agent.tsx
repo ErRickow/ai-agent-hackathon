@@ -630,7 +630,7 @@ function AIAgent() {
                     {getModeTitle(aiMode)}
                   </h2>
                   <a 
-                      href={provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
+                      href={provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=agentic-merdeka.vercel.app"} 
                       target="_blank" 
                       rel="noopener noreferrer"
                     >

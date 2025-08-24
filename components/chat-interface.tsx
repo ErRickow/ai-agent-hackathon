@@ -156,7 +156,7 @@ const BotAvatar2 = ({ persona, provider }: { persona: Persona;provider: "lunos" 
     const faviconUrl = provider === "lunos" ?
       "https://www.google.com/s2/favicons?sz=64&domain_url=https://lunos.tech" :
       "https://www.google.com/s2/favicons?sz=64&domain_url=https://unli.dev";
-    return <img src={faviconUrl} alt={`${provider} icon`} className="w-8 h-8 rounded-full" />;
+    return <img src={faviconUrl} alt={`${provider} icon`} className="w-10 h-10 rounded-full" />;
   }
   
   return <>{persona.icon}</>;
@@ -368,7 +368,7 @@ export default function ChatInterface({
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
                   <a 
-                    href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
+                    href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=agentic-merdeka.vercel.app"} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
