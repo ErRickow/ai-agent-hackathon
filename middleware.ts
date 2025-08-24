@@ -6,7 +6,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  if (pathname.startsWith('/api/chat')) {
+  if (pathname.startsWith('/api/chat') || pathname.startsWith('/api/messages')) {
     const sessionCookie = request.cookies.get('session');
     
     if (!sessionCookie) {

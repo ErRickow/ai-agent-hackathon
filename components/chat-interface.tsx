@@ -248,7 +248,7 @@ export default function ChatInterface({
       {/* Messages Area */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 w-full overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-4 space-y-4 sm:space-y-6"
+        className="flex-1 w-full overflow-y-auto p-4 space-y-6"
         style={{ scrollBehavior: 'smooth' }}
       >
         {messages.length === 0 && (
