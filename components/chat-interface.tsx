@@ -251,7 +251,7 @@ export default function ChatInterface({
         className="flex-1 w-full overflow-y-auto p-4 space-y-6"
         style={{ scrollBehavior: 'smooth' }}
       >
-        {messages.length === 0 && (
+        {messages.length === 0 && !isLoading && (
           <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-4">
             <div 
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
@@ -344,7 +344,7 @@ export default function ChatInterface({
                     <p className="text-xs sm:text-sm break-words">{message.content}</p>
                   </div>
                 ) : (
-                  <div className={`prose prose-xs sm:prose-sm max-w-full w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto prose-code:break-words ${message.role === 'assistant' ? 'text-left' : ''}`}>
+                  <div className={`prose prose-xs sm:prose-sm max-w-full w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto prose-code:break-words ${message.role === 'assistant' ? 'text-left' : ''} ${message.role === 'user' ? 'user-message' : ''}`}>
                     <ReactMarkdown
                       components={markdownComponents}
                       remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
@@ -453,7 +453,7 @@ export default function ChatInterface({
               htmlFor="image-generation-mode"
               className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground"
             >
-              <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <ImageIcon className="h-3 w-3 sm:h-4 sm:h-4" />
               <span className="hidden sm:inline">Imagen</span>
             </Label>
           </div>
