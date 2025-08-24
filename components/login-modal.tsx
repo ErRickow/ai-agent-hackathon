@@ -6,6 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Loader2 } from 'lucide-react';
+import {
+  InputOTP,
+  InputOTPGroup,
+  InputOTPSlot,
+} from "@/components/ui/input-otp";
 
 interface LoginModalProps {
   open: boolean;
@@ -33,7 +38,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     setIsLoading(false);
     
     if (!res.ok) {
-      setError(data.error || 'Failed to send code.');
+      setError(data.error || 'Gagal mengirim kode.');
     } else {
       setMessage(data.message);
       setStep('code');
@@ -52,9 +57,8 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     setIsLoading(false);
     
     if (!res.ok) {
-      setError(data.error || 'Verification failed.');
+      setError(data.error || 'Verifikasi gagal.');
     } else {
-      // Login berhasil, refresh halaman untuk mengambil sesi baru
       window.location.reload();
     }
   };
@@ -63,26 +67,35 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{step === 'email' ? 'Login to Continue' : 'Enter Verification Code'}</DialogTitle>
+          <DialogTitle>{step === 'email' ? 'Login untuk Melanjutkan' : 'Masukkan Kode Verifikasi'}</DialogTitle>
           <DialogDescription>
             {step === 'email' 
-              ? 'Login To acces more message.'
-              : `A code has been sent to ${email}. Please enter it below.`
+              ? 'Login untuk mendapatkan akses pesan lebih banyak.'
+              : `Sebuah kode telah dikirim ke ${email}. Silakan masukkan di bawah ini.`
             }
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 py-4">
           {step === 'email' ? (
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
-              <Input id="email" type="email" placeholder="you@example.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+              <Label htmlFor="email">Alamat Email</Label>
+              <Input id="email" type="email" placeholder="anda@contoh.com" value={email} onChange={(e) => setEmail(e.target.value)} />
             </div>
           ) : (
-            <div className="space-y-2">
-              <Label htmlFor="code">6-Digit Code</Label>
-              <Input id="code" type="text" placeholder="123456" value={code} onChange={(e) => setCode(e.target.value)} />
-              <p className="text-xs text-muted-foreground">
-                Didn't get the code? **Check your spam/junk folder!**
+            <div className="space-y-2 flex flex-col items-center">
+              <Label htmlFor="code">Kode 6-Digit</Label>
+              <InputOTP maxLength={6} value={code} onChange={(value) => setCode(value)}>
+                <InputOTPGroup>
+                  <InputOTPSlot index={0} />
+                  <InputOTPSlot index={1} />
+                  <InputOTPSlot index={2} />
+                  <InputOTPSlot index={3} />
+                  <InputOTPSlot index={4} />
+                  <InputOTPSlot index={5} />
+                </InputOTPGroup>
+              </InputOTP>
+              <p className="text-xs text-muted-foreground pt-2">
+                Tidak menerima kode? Cek folder spam/junk Anda!
               </p>
             </div>
           )}
@@ -91,10 +104,27 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
           {message && !error && <p className="text-sm text-green-600">{message}</p>}
         </div>
 
-        <Button onClick={step === 'email' ? handleSendCode : handleVerifyCode} disabled={isLoading}>
+        <Button onClick={step === 'email' ? handleSendCode : handleVerifyCode} disabled={isLoading} className="w-full">
           {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          {step === 'email' ? 'Send Code' : 'Verify & Login'}
+          {step === 'email' ? 'Kirim Kode' : 'Verifikasi & Login'}
         </Button>
+
+        <div className="text-center mt-4">
+          <a 
+            href="https://mailry.co/?utm_source=ai-agent-hackathon" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <img 
+              src="https://www.google.com/s2/favicons?sz=16&domain_url=https://mailry.co" 
+              alt="Mailry favicon" 
+              width={16} 
+              height={16} 
+            />
+            <span>Otentikasi email didukung oleh Mailry</span>
+          </a>
+        </div>
       </DialogContent>
     </Dialog>
   );

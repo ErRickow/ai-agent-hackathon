@@ -251,7 +251,7 @@ function AIAgent() {
       const assistantMessage: Message = {
         id: (Date.now() + 1).toString(),
         role: "assistant",
-        content: `Gambar berhasil dibuat untuk prompt: "${input}"`,
+        content: `Gambar berhasil dibuat untuk prompt: "${input}"\n\nDuplikat web ini kalo kamu malas ngoding [https://github.com/ErRickow/ai-agent-hackathon](PENCET!)`,
         timestamp: new Date(),
         provider,
         type: "image",
@@ -415,7 +415,7 @@ function AIAgent() {
       const audioMessage: Message = {
         id: Date.now().toString(),
         role: "assistant",
-        content: `Generated speech: "${ttsText}"`,
+        content: `Generated speech: "${ttsText}"\n\nDuplikat web ini kalo kamu malas ngoding [https://github.com/ErRickow/ai-agent-hackathon](PENCET!)`,
         timestamp: new Date(),
         provider,
         type: "audio",
