@@ -216,10 +216,10 @@ export default function ChatInterface({
   };
   
   return (
-    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
+    <div className="chat-container">
       {/* Header dengan tombol reset */}
       {messages.length > 0 && (
-        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
+        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-border bg-card/50 backdrop-blur-sm chat-header">
           <div className="text-sm text-muted-foreground">
             {messages.length} pesan
           </div>
@@ -259,7 +259,7 @@ export default function ChatInterface({
       <div 
         ref={messagesContainerRef} 
         className={cn(
-          "flex-1 overflow-y-auto overflow-x-hidden p-4",
+          "chat-messages-area p-4",
           messages.length > 0 ? "space-y-6" : "flex flex-col items-center justify-center"
         )}
       >
@@ -427,7 +427,7 @@ export default function ChatInterface({
       </div>
 
       {/* Input Area - Fixed at bottom */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 w-full flex-shrink-0">
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 w-full chat-input-area">
         <div className="relative bg-background rounded-lg border max-w-full">
           {uploadedImage && (
             <div className="p-2 border-b">

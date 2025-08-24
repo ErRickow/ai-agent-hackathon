@@ -120,8 +120,60 @@
   * {
     @apply border-border outline-ring/50;
   }
+  
+  html {
+    height: 100%;
+    overflow: hidden; /* Prevent body scroll */
+  }
+  
   body {
     @apply bg-background text-foreground;
+    height: 100vh;
+    height: 100dvh; /* Dynamic viewport height for mobile */
+    overflow: hidden;
+    margin: 0;
+    padding: 0;
+  }
+  
+  /* Ensure root div takes full height */
+  #__next, 
+  #root, 
+  [data-reactroot] {
+    height: 100%;
+    overflow: hidden;
+  }
+}
+
+/* CRITICAL: Layout fixes untuk chat interface */
+@layer components {
+  /* Ensure full height containers */
+  .chat-container {
+    height: 100vh !important;
+    height: 100dvh !important;
+    display: flex !important;
+    flex-direction: column !important;
+    overflow: hidden !important;
+  }
+  
+  /* Fixed input area at bottom */
+  .chat-input-area {
+    flex-shrink: 0 !important;
+    position: sticky !important;
+    bottom: 0 !important;
+    z-index: 10 !important;
+  }
+  
+  /* Messages area that scrolls */
+  .chat-messages-area {
+    flex: 1 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    min-height: 0 !important;
+  }
+  
+  /* Header area */
+  .chat-header {
+    flex-shrink: 0 !important;
   }
 }
 
@@ -221,4 +273,37 @@
 .prose ol:last-child,
 .prose blockquote:last-child {
   margin-bottom: 0;
+}
+
+/* CRITICAL: Prevent viewport issues on mobile */
+@supports (-webkit-touch-callout: none) {
+  /* iOS Safari specific fixes */
+  body {
+    height: -webkit-fill-available;
+  }
+  
+  .chat-container {
+    height: -webkit-fill-available !important;
+  }
+}
+
+/* Prevent scroll issues in nested containers */
+.no-scroll-parent {
+  overflow: hidden !important;
+  height: 100vh;
+  height: 100dvh;
+}
+
+/* Force proper flexbox behavior */
+.flex-column-full {
+  display: flex !important;
+  flex-direction: column !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.flex-1-min-height {
+  flex: 1 !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
 }

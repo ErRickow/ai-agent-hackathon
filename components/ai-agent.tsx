@@ -570,7 +570,7 @@ function AIAgent() {
 
   return (
     <TooltipProvider>
-      <div className="flex h-screen w-full bg-background text-foreground">
+      <div className="flex h-screen w-full bg-background text-foreground no-scroll-parent">
         {/* Mobile Sidebar Overlay */}
         {isSidebarOpen && (
           <div 
@@ -609,9 +609,9 @@ function AIAgent() {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex flex-col flex-1 min-w-0 h-screen">
+        <div className="flex-column-full flex-1 min-w-0 chat-container">
           {/* Header */}
-          <header className="border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
+          <header className="border-b border-border bg-card/50 backdrop-blur-sm chat-header">
             <div className="flex items-center justify-between p-3 sm:p-4 gap-2">
               {/* Left Section */}
               <div className="flex items-center gap-2 sm:gap-3 min-w-0">
@@ -673,7 +673,7 @@ function AIAgent() {
           </header>
 
           {/* Content Area - Full remaining height */}
-          <div className="flex-1 min-h-0">
+          <div className="flex-1-min-height">
             {aiMode === "chat" && (
               <ChatInterface
                 messages={messages}
