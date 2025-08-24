@@ -39,6 +39,7 @@ import { ImageIcon } from "lucide-react";
 import { ButtonCopy } from "./button-copy";
 import { TextEffect } from "./core/text-effect";
 import { TextShimmer } from '@/components/core/text-shimmer';
+import { cn } from "@/lib/utils";
 
 const MAX_INPUT_LENGTH = 2000;
 
@@ -76,7 +77,6 @@ interface ChatInterfaceProps {
   onImageGenToggle: (enabled: boolean) => void;
   uploadedImage: string | null;
   setUploadedImage: (value: string | null) => void;
-  // Fungsi baru untuk delete dan reset
   onDeleteMessage: (messageId: string) => void;
   onResetConversation: () => void;
 }
@@ -200,7 +200,6 @@ export default function ChatInterface({
   
   const userTextColor = getContrastingTextColor(selectedPersona.color);
   
-  // Function to get loading text based on mode
   const getLoadingText = () => {
     return isImageGenMode ? "Membuat gambar..." : "Berpikir...";
   };
@@ -248,13 +247,16 @@ export default function ChatInterface({
       {/* Messages Area */}
       <div 
         ref={messagesContainerRef} 
-        className="flex-1 w-full overflow-y-auto p-4 space-y-6"
+        className={cn(
+          "flex-1 w-full overflow-y-auto p-4",
+          messages.length > 0 ? "space-y-6" : "flex flex-col items-center justify-center"
+        )}
         style={{ scrollBehavior: 'smooth' }}
       >
         {messages.length === 0 && !isLoading && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-4">
+          <div className="text-center space-y-4 px-4">
             <div 
-              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto"
               style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
             >
               <BotAvatar persona={selectedPersona} provider={provider} />
@@ -273,7 +275,6 @@ export default function ChatInterface({
             key={message.id}
             className={`group flex gap-2 sm:gap-4 items-start w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
-            {/* AVATAR */}
             <div
               className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1`}
               style={{
@@ -288,14 +289,12 @@ export default function ChatInterface({
               )}
             </div>
 
-            {/* MESSAGE CONTENT */}
             <div className={`flex-1 space-y-1 min-w-0 max-w-full overflow-hidden ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
               <div className={`flex items-center gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
                 <div className={`font-semibold text-xs sm:text-sm ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                   {message.role === "user" ? "You" : selectedPersona.name}
                 </div>
                 
-                {/* Dropdown menu untuk delete message */}
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
                     <Button
@@ -303,7 +302,7 @@ export default function ChatInterface({
                       size="icon"
                       className="h-4 w-4 sm:h-5 sm:w-5 opacity-0 group-hover:opacity-100 transition-opacity"
                     >
-                      <MoreVertical className="h-3 w-3 sm:h-4 sm:w-4" />
+                      <MoreVertical className="h-3 w-3 sm:h-4 sm:h-4" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align={message.role === 'user' ? 'end' : 'start'}>
@@ -373,7 +372,6 @@ export default function ChatInterface({
           </div>
         ))}
 
-        {/* Streaming Message */}
         {streamingMessage && (
           <div className="flex gap-2 sm:gap-4 items-start w-full">
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
@@ -398,7 +396,6 @@ export default function ChatInterface({
           </div>
         )}
 
-        {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
           <div className="flex gap-2 sm:gap-4 items-start w-full">
             <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
@@ -422,7 +419,6 @@ export default function ChatInterface({
       {/* Input Area */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 w-full flex-shrink-0">
         <div className="relative bg-background rounded-lg border max-w-full">
-          {/* Image Preview Area */}
           {uploadedImage && (
             <div className="p-2 border-b">
               <div className="relative w-16 h-16 sm:w-20 sm:h-20">
@@ -437,7 +433,7 @@ export default function ChatInterface({
                   className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-muted hover:bg-destructive text-destructive-foreground"
                   onClick={() => setUploadedImage(null)}
                 >
-                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
+                  <X className="h-3 w-3 sm:h-4 sm:h-4" />
                 </Button>
               </div>
             </div>
@@ -458,7 +454,6 @@ export default function ChatInterface({
             </Label>
           </div>
           
-          {/* Textarea and Buttons */}
           <div className="flex items-end gap-1 sm:gap-2 p-2">
             <input
               type="file"

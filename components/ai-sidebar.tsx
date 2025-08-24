@@ -113,7 +113,7 @@ export default function AISidebar({
             <Button 
               variant="link" 
               size="sm" 
-              className="p-0 h-auto text-xs" 
+              className="p-0 h-auto text-xs text-red" 
               onClick={onLogoutClick}
             >
               Logout
@@ -132,8 +132,8 @@ export default function AISidebar({
     <div className="hidden lg:flex flex-col w-full lg:w-80 xl:w-96 border-r border-border bg-card transition-all duration-300 min-h-screen">
       {/* Header */}
       <div className="p-4 lg:p-6 border-b border-border">
-        <h1 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-          AI Agent Hackathon
+        <h1 className="text-lg lg:text-2xl font-bold bg-gradient-to-r from-red-600 to-gray-300 bg-clip-text text-transparent">
+          Agentic Merdeka
         </h1>
         <p className="text-xs lg:text-sm text-muted-foreground mt-1">
           Multi-modal AI Assistant
@@ -272,8 +272,8 @@ export default function AISidebar({
       <SheetContent side="left" className="w-full sm:w-80 p-0 overflow-y-auto">
         {/* Header */}
         <div className="p-4 sm:p-6 border-b border-border">
-          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
-            Hackathon AI
+          <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-red-600 to-gray-300 bg-clip-text text-transparent">
+            Agentic Merdeka
           </h1>
           <p className="text-xs sm:text-sm text-muted-foreground mt-1">
             Multi-modal AI Assistant
