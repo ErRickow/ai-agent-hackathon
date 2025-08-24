@@ -12,7 +12,7 @@ import { intent } from "@/lib/prompts/intent-classifier"
 import { excel } from "@/lib/prompts/excel-expert"
 import { Merdeka } from "@/lib/prompts/merdeka-ai"
 import { agentAssistant } from "@/lib/prompts/assistant"
-import {latexLegend} from "@/lib/prompts/assistant"
+import {latexLegend} from "@/lib/prompts/latex-legend"
 
 export interface Persona {
   id: string
@@ -68,7 +68,7 @@ export const predefinedPersonas: Persona[] = [
   id: "gaming",
   name: "Latex Legend",
   icon: <Radical className="w-4 h-4" />,
-  systemPrompt: latextLegend,
+  systemPrompt: latexLegend,
   description: "Write LaTeX documents, generating code for mathematical equations, tables, and more.",
   color: "#8B5CF6",
 }, ]
