@@ -151,6 +151,17 @@ const BotAvatar = ({ persona, provider }: { persona: Persona; provider: "lunos" 
   return <>{persona.icon}</>;
 };
 
+const BotAvatar2 = ({ persona, provider }: { persona: Persona;provider: "lunos" | "unli" }) => {
+  if (persona.id === "assistant") {
+    const faviconUrl = provider === "lunos" ?
+      "https://www.google.com/s2/favicons?sz=64&domain_url=https://lunos.tech" :
+      "https://www.google.com/s2/favicons?sz=64&domain_url=https://unli.dev";
+    return <img src={faviconUrl} alt={`${provider} icon`} className="w-8 h-8 rounded-full" />;
+  }
+  
+  return <>{persona.icon}</>;
+};
+
 export default function ChatInterface({
   messages,
   streamingMessage,
@@ -205,10 +216,10 @@ export default function ChatInterface({
   };
   
   return (
-    <div className="flex flex-col h-full w-full overflow-hidden">
+    <div className="flex flex-col h-screen max-h-screen overflow-hidden">
       {/* Header dengan tombol reset */}
       {messages.length > 0 && (
-        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-border bg-card/50 backdrop-blur-sm">
+        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-border bg-card/50 backdrop-blur-sm flex-shrink-0">
           <div className="text-sm text-muted-foreground">
             {messages.length} pesan
           </div>
@@ -248,10 +259,9 @@ export default function ChatInterface({
       <div 
         ref={messagesContainerRef} 
         className={cn(
-          "flex-1 w-full overflow-y-auto p-4",
+          "flex-1 overflow-y-auto overflow-x-hidden p-4",
           messages.length > 0 ? "space-y-6" : "flex flex-col items-center justify-center"
         )}
-        style={{ scrollBehavior: 'smooth' }}
       >
         {messages.length === 0 && !isLoading && (
           <div className="text-center space-y-4 px-4">
@@ -259,7 +269,7 @@ export default function ChatInterface({
               className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center mx-auto"
               style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
             >
-              <BotAvatar persona={selectedPersona} provider={provider} />
+              <BotAvatar2 persona={selectedPersona} provider={provider} />
             </div>
             <div className="space-y-2 max-w-md">
               <h3 className="text-lg sm:text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
@@ -416,7 +426,7 @@ export default function ChatInterface({
         )}
       </div>
 
-      {/* Input Area */}
+      {/* Input Area - Fixed at bottom */}
       <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 w-full flex-shrink-0">
         <div className="relative bg-background rounded-lg border max-w-full">
           {uploadedImage && (
