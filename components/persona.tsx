@@ -12,7 +12,7 @@ import { intent } from "@/lib/prompts/intent-classifier"
 import { quiz } from "@/lib/prompts/quiz-creator"
 import { Merdeka } from "@/lib/prompts/merdeka-ai"
 import { agentAssistant } from "@/lib/prompts/assistant"
-import {latextLegend} from "@/lib/prompts/assistant"
+import {latexLegend} from "@/lib/prompts/assistant"
 
 export interface Persona {
   id: string
