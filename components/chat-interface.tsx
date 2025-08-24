@@ -335,7 +335,7 @@ export default function ChatInterface({
             </div>
           )}
           
-          <div className="flex items-center space-x-2 pt-3">
+          <div className="flex items-center space-x-2 p-3 pb-0">
             <Switch
               id="image-generation-mode"
               checked={isImageGenMode}
@@ -349,8 +349,9 @@ export default function ChatInterface({
               <span>Imagen</span>
             </Label>
           </div>
+          
           {/* Textarea and Buttons */}
-          <div className="relative flex items-center">
+          <div className="flex items-end gap-2 p-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -363,7 +364,7 @@ export default function ChatInterface({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 ml-2"
+                  className="shrink-0 h-10 w-10"
                   onClick={() => fileInputRef.current?.click()}
                 >
                   <Paperclip className="w-4 h-4" />
@@ -373,6 +374,7 @@ export default function ChatInterface({
                 <p>Attach Image</p>
               </TooltipContent>
             </Tooltip>
+            
             <Textarea
               value={input}
               onChange={(e) => setInput(e.target.value)}
@@ -395,16 +397,17 @@ export default function ChatInterface({
                     ? `Describe an image to generate...`
                     : `Type your message...`
               }
-              className="flex-1 min-h-[44px] max-h-32 resize-none border-0 shadow-none focus-visible:ring-0"
+              className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-3 py-2.5"
               disabled={isLoading}
             />
+            
             <Tooltip>
               <TooltipTrigger asChild>
                 <Button
                   onClick={sendMessage}
                   disabled={isLoading || (!input.trim() && !uploadedImage)}
                   size="icon"
-                  className="shrink-0 mr-2"
+                  className="shrink-0 h-10 w-10"
                 >
                   {isLoading ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
