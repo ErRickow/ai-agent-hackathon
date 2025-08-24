@@ -392,10 +392,10 @@ export default function ChatInterface({
               }}
               placeholder={
                 uploadedImage
-                  ? "Ask something about the image..."
+                  ? "Tanyakan tentang gambarnya..."
                   : isImageGenMode
-                    ? `Describe an image to generate...`
-                    : `Type your message...`
+                    ? `Deskripsikan gambarnya...`
+                    : `Tanyakan sesuatu...`
               }
               className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-3 py-2.5"
               disabled={isLoading}
@@ -417,7 +417,7 @@ export default function ChatInterface({
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
-                <p>Send message</p>
+                <p>Kirim pesannya</p>
               </TooltipContent>
             </Tooltip>
           </div>
