@@ -22,7 +22,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  title: "AI Hackathon Agent - Multi-Modal AI Platform",
+  title: "Agentic Merdeka - Multi-Modal AI Platform Celebration 17 August 2025",
   description: "Complete AI platform with chat, image generation, vision, TTS, and embeddings"
 }
 
