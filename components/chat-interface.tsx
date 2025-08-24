@@ -156,7 +156,7 @@ const BotAvatar2 = ({ persona, provider }: { persona: Persona;provider: "lunos" 
     const faviconUrl = provider === "lunos" ?
       "https://www.google.com/s2/favicons?sz=64&domain_url=https://lunos.tech" :
       "https://www.google.com/s2/favicons?sz=64&domain_url=https://unli.dev";
-    return <img src={faviconUrl} alt={`${provider} icon`} className="w-10 h-10 rounded-full" />;
+    return <img src={faviconUrl} alt={`${provider} icon`} className="w-12 h-12 rounded-full" />;
   }
   
   return <>{persona.icon}</>;
