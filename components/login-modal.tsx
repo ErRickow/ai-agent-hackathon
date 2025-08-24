@@ -111,7 +111,7 @@ export function LoginModal({ open, onOpenChange }: LoginModalProps) {
 
         <div className="text-center mt-4">
           <a 
-            href="https://mailry.co/?utm_source=ai-agent-hackathon" 
+            href="https://mailry.co/?utm_source=agentic-merdeka.vercel.app" 
             target="_blank" 
             rel="noopener noreferrer" 
             className="inline-flex items-center gap-2 text-xs text-muted-foreground hover:text-foreground transition-colors"

@@ -370,7 +370,7 @@ export default function ChatInterface({
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
                   <a 
-                    href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=agentic-merdeka.vercel.app"} 
+                    href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=agentic-merdeka.vercel.app" : "https://unli.dev/?utm_source=agentic-merdeka.vercel.app"} 
                     target="_blank" 
                     rel="noopener noreferrer"
                   >
