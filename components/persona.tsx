@@ -9,7 +9,7 @@ import {
   Radical
 } from "lucide-react"
 import { intent } from "@/lib/prompts/intent-classifier"
-import { quiz } from "@/lib/prompts/quiz-creator"
+import { excel } from "@/lib/prompts/excel-expert"
 import { Merdeka } from "@/lib/prompts/merdeka-ai"
 import { agentAssistant } from "@/lib/prompts/assistant"
 import {latexLegend} from "@/lib/prompts/assistant"
