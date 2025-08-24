@@ -10,22 +10,25 @@ export function useAutoScroll < T extends HTMLElement > (
   dependencies: any[] = []
 ): React.RefObject < T > {
   const scrollRef = useRef < T > (null);
+  const isScrolledToBottomRef = useRef(true);
   
   useEffect(() => {
     const element = scrollRef.current;
-    if (!element) return;
-    
-    // Tentukan "ambang batas" untuk dianggap "di bawah"
-    const scrollThreshold = 100; // dalam piksel
-    
-    // Hitung posisi sebelum konten baru ditambahkan
-    const position = element.scrollTop + element.clientHeight;
-    const isAtBottom = position >= element.scrollHeight - scrollThreshold;
-    
-    // Hanya gulir jika pengguna sudah berada di bagian bawah
-    if (isAtBottom) {
-      element.scrollTo({
-        top: element.scrollHeight,
+    if (element) {
+      const handleScroll = () => {
+        const { scrollTop, scrollHeight, clientHeight } = element;
+        const isAtBottom = scrollHeight - scrollTop - clientHeight < 100;
+        isScrolledToBottomRef.current = isAtBottom;
+      };
+      element.addEventListener('scroll', handleScroll, { passive: true });
+      return () => element.removeEventListener('scroll', handleScroll);
+    }
+  }, []);
+  
+  useEffect(() => {
+    if (scrollRef.current && isScrolledToBottomRef.current) {
+      scrollRef.current.scrollTo({
+        top: scrollRef.current.scrollHeight,
         behavior: "smooth",
       });
     }
