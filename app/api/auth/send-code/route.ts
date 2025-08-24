@@ -38,13 +38,13 @@ export async function POST(request: NextRequest) {
           <p>Anda meminta untuk masuk ke aplikasi kami. Silakan gunakan kode berikut untuk menyelesaikan proses login Anda:</p>
           <p style="font-size: 24px; font-weight: bold; letter-spacing: 2px; color: #333; margin: 20px 0;">${kode}</p>
           <p>Kode ini berlaku selama 10 menit ke depan. Jika Anda tidak meminta ini, Anda dapat mengabaikan email ini dengan aman.</p>
-          <p>Terima kasih,<br/>Tim AI Agent Hackathon</p>
+          <p>Terima kasih,<br/>Tim Er Project</p>
           <hr style="border: none; border-top: 1px solid #eee; margin-top: 20px;" />
           <p style="font-size: 12px; color: #999;">Jika Anda mengalami kesulitan, silakan hubungi dukungan kami. Ingat untuk memeriksa folder spam/junk jika Anda tidak melihat email kami di kotak masuk.</p>
         </div>
       `,
       plainBody: `
-        Selamat datang di AI Agent Hackathon!
+        Selamat datang di AGENTIC MERDEKA!
         
         Kode login Anda adalah: ${kode}
         
