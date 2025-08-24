@@ -229,7 +229,7 @@ export default function ChatInterface({
               <Button 
                 variant="outline" 
                 size="sm"
-                className="gap-2 text-sm sm:text-base"
+                className="gap-2 text-sm sm:text-sm"
               >
                 <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
                 Reset Chat
@@ -274,7 +274,7 @@ export default function ChatInterface({
             </div>
             <div className="space-y-2 max-w-md">
               <h3 className="text-lg sm:text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
-              <TextShimmer duration={1} className="text-muted-foreground text-sm sm:text-base">
+              <TextShimmer duration={1} className="text-muted-foreground text-sm sm:text-sm">
                 {selectedPersona.description}
               </TextShimmer>
             </div>
@@ -302,7 +302,7 @@ export default function ChatInterface({
 
             <div className={`flex-1 space-y-1 min-w-0 max-w-full overflow-hidden ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
               <div className={`flex items-center gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
-                <div className={`font-semibold text-sm sm:text-base ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                <div className={`font-semibold text-sm sm:text-sm ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                   {message.role === "user" ? (user ? user.email : "You") : selectedPersona.name}
                 </div>
                 
@@ -344,14 +344,14 @@ export default function ChatInterface({
                       alt="Generated"
                       className={`rounded-lg max-w-full w-full sm:max-w-xs lg:max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
                     />
-                    <p className="text-sm sm:text-base break-words">{message.content}</p>
+                    <p className="text-sm sm:text-sm break-words">{message.content}</p>
                   </div>
                 ) : message.type === "audio" && message.audioUrl ? (
                   <div className="space-y-2 pt-2 w-full">
                     <audio controls className={`w-full max-w-full sm:max-w-sm ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}>
                       <source src={message.audioUrl} type="audio/mpeg" />
                     </audio>
-                    <p className="text-sm sm:text-base break-words">{message.content}</p>
+                    <p className="text-sm sm:text-sm break-words">{message.content}</p>
                   </div>
                 ) : (
                   <div className={`prose prose-xs sm:prose-sm max-w-full w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto prose-code:break-words ${message.role === 'assistant' ? 'text-left' : ''} ${message.role === 'user' ? 'user-message' : ''}`}>
@@ -389,7 +389,7 @@ export default function ChatInterface({
               <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="flex-1 space-y-1 min-w-0 max-w-full overflow-hidden flex flex-col items-start">
-              <div className="font-semibold text-sm sm:text-base text-left w-full">
+              <div className="font-semibold text-sm sm:text-sm text-left w-full">
                 {selectedPersona.name}
               </div>
               <div className="break-words overflow-hidden w-full text-left">
@@ -413,12 +413,12 @@ export default function ChatInterface({
               <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="flex-1 space-y-2 min-w-0 flex flex-col items-start">
-              <div className="font-semibold text-sm sm:text-base text-left w-full">
+              <div className="font-semibold text-sm sm:text-sm text-left w-full">
                 {selectedPersona.name}
               </div>
               <div className="flex items-center gap-2">
                 <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
-                <TextShimmer duration={1} className="text-sm sm:text-base text-muted-foreground">
+                <TextShimmer duration={1} className="text-sm sm:text-sm text-muted-foreground">
                   {getLoadingText()}
                 </TextShimmer>
               </div>
@@ -458,7 +458,7 @@ export default function ChatInterface({
             />
             <Label
               htmlFor="image-generation-mode"
-              className="flex items-center gap-2 text-sm sm:text-base text-muted-foreground"
+              className="flex items-center gap-2 text-sm sm:text-sm text-muted-foreground"
             >
               <ImageIcon className="h-3 w-3 sm:h-4 sm:h-4" />
               <span className="hidden sm:inline">Imagen</span>
@@ -511,7 +511,7 @@ export default function ChatInterface({
                     ? `Deskripsikan gambarnya...`
                     : `Tanyakan sesuatu...`
               }
-              className="flex-1 min-h-[2rem] sm:min-h-[2.5rem] max-h-24 sm:max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-base"
+              className="flex-1 min-h-[2rem] sm:min-h-[2.5rem] max-h-24 sm:max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-2 sm:px-3 py-2 sm:py-2.5 text-sm sm:text-sm"
               disabled={isLoading}
             />
             
