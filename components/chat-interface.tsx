@@ -2,11 +2,29 @@
 
 import type React from "react";
 import React from "react";
-import { Send, Bot, User, Loader2, Copy, Paperclip, X } from "lucide-react";
+import { Send, Bot, User, Loader2, Copy, Paperclip, X, Trash2, RotateCcw, MoreVertical } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+} from "@/components/ui/dropdown-menu";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { CodeBlock, CodeBlockCode, CodeBlockGroup } from "@/components/code-block";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
@@ -29,13 +47,14 @@ interface Message {
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
-  provider ? : "lunos" | "unli";
-  type ? : "text" | "image" | "audio" | "embedding";
-  imageUrl ? : string;
-  audioUrl ? : string;
+  provider?: "lunos" | "unli";
+  type?: "text" | "image" | "audio" | "embedding";
+  imageUrl?: string;
+  audioUrl?: string;
 }
 
 interface Persona {
+  id?: string;
   name: string;
   description: string;
   systemPrompt: string;
@@ -57,6 +76,9 @@ interface ChatInterfaceProps {
   onImageGenToggle: (enabled: boolean) => void;
   uploadedImage: string | null;
   setUploadedImage: (value: string | null) => void;
+  // Fungsi baru untuk delete dan reset
+  onDeleteMessage: (messageId: string) => void;
+  onResetConversation: () => void;
 }
 
 const markdownComponents = {
@@ -77,18 +99,20 @@ const markdownComponents = {
     }
     
     return (
-      <CodeBlock className="my-4 max-w-full">
-        <CodeBlockGroup className="px-4 py-2 border-b border-border flex items-center justify-between">
-          <span className="text-sm text-muted-foreground">{language}</span>
-          <ButtonCopy code={codeString} />
-        </CodeBlockGroup>
-        <div className="overflow-x-auto">
-          <CodeBlockCode 
-            code={codeString} 
-            language={language}
-          />
-        </div>
-      </CodeBlock>
+      <div className="my-4 w-full overflow-hidden">
+        <CodeBlock className="w-full">
+          <CodeBlockGroup className="px-4 py-2 border-b border-border flex items-center justify-between">
+            <span className="text-sm text-muted-foreground">{language}</span>
+            <ButtonCopy code={codeString} />
+          </CodeBlockGroup>
+          <div className="overflow-x-auto">
+            <CodeBlockCode 
+              code={codeString} 
+              language={language}
+            />
+          </div>
+        </CodeBlock>
+      </div>
     );
   },
   pre({ children }: any) {
@@ -100,16 +124,23 @@ const markdownComponents = {
         href={href}
         target="_blank"
         rel="noopener noreferrer"
-        className="text-primary hover:underline break-all"
+        className="text-primary hover:underline break-words"
         {...props}
       >
         {children}
       </a>
     );
+  },
+  p({ children, ...props }: any) {
+    return (
+      <p className="break-words overflow-wrap-anywhere" {...props}>
+        {children}
+      </p>
+    );
   }
 };
 
-const BotAvatar = ({ persona, provider }: { persona: Persona;provider: "lunos" | "unli" }) => {
+const BotAvatar = ({ persona, provider }: { persona: Persona; provider: "lunos" | "unli" }) => {
   if (persona.id === "assistant") {
     const faviconUrl = provider === "lunos" ?
       "https://www.google.com/s2/favicons?sz=64&domain_url=https://lunos.tech" :
@@ -134,11 +165,13 @@ export default function ChatInterface({
   onImageGenToggle,
   uploadedImage,
   setUploadedImage,
+  onDeleteMessage,
+  onResetConversation,
 }: ChatInterfaceProps) {
-  const messagesContainerRef =useAutoScroll([messages, streamingMessage]);
-  const fileInputRef = React.useRef < HTMLInputElement > (null);
+  const messagesContainerRef = useAutoScroll([messages, streamingMessage]);
+  const fileInputRef = React.useRef<HTMLInputElement>(null);
   
-  const handleImageUpload = (e: React.ChangeEvent < HTMLInputElement > ) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -173,20 +206,62 @@ export default function ChatInterface({
   };
   
   return (
-    <>
+    <div className="flex flex-col h-full w-full overflow-hidden">
+      {/* Header dengan tombol reset */}
+      {messages.length > 0 && (
+        <div className="flex justify-between items-center p-2 sm:p-4 border-b border-border bg-card/50 backdrop-blur-sm">
+          <div className="text-sm text-muted-foreground">
+            {messages.length} pesan
+          </div>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button 
+                variant="outline" 
+                size="sm"
+                className="gap-2 text-xs sm:text-sm"
+              >
+                <RotateCcw className="w-3 h-3 sm:w-4 sm:h-4" />
+                Reset Chat
+              </Button>
+            </AlertDialogTrigger>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Reset Percakapan?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Tindakan ini akan menghapus semua pesan dalam percakapan ini. Tindakan ini tidak dapat dibatalkan.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Batal</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={onResetConversation}
+                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                >
+                  Ya, Reset
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+        </div>
+      )}
+
       {/* Messages Area */}
-      <div ref={messagesContainerRef} className="flex-1 w-full h-full overflow-y-auto p-4 space-y-6">
+      <div 
+        ref={messagesContainerRef} 
+        className="flex-1 w-full overflow-y-auto overflow-x-hidden px-2 sm:px-4 py-4 space-y-4 sm:space-y-6"
+        style={{ scrollBehavior: 'smooth' }}
+      >
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center space-y-4">
+          <div className="flex flex-col items-center justify-center h-full text-center space-y-4 px-4">
             <div 
-              className="w-16 h-16 rounded-full flex items-center justify-center"
+              className="w-12 h-12 sm:w-16 sm:h-16 rounded-full flex items-center justify-center"
               style={{ backgroundColor: selectedPersona.color, color: userTextColor }}
             >
               <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
-            <div className="space-y-2">
-              <h3 className="text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
-              <TextShimmer duration={1} className="text-muted-foreground max-w-md">
+            <div className="space-y-2 max-w-md">
+              <h3 className="text-lg sm:text-xl font-semibold">Mulai percakapan dengan {selectedPersona.name}</h3>
+              <TextShimmer duration={1} className="text-muted-foreground text-sm sm:text-base">
                 {selectedPersona.description}
               </TextShimmer>
             </div>
@@ -196,47 +271,80 @@ export default function ChatInterface({
         {messages.map((message) => (
           <div
             key={message.id}
-            className={`flex gap-4 items-start w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
+            className={`group flex gap-2 sm:gap-4 items-start w-full ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}
           >
             {/* AVATAR */}
             <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1`}
+              className={`w-6 h-6 sm:w-8 sm:h-8 rounded-full flex items-center justify-center flex-shrink-0 mt-1`}
               style={{
                 backgroundColor: message.role === 'user' ? selectedPersona.color : 'var(--muted)',
                 color: message.role === 'user' ? userTextColor : 'var(--muted-foreground)',
               }}
             >
               {message.role === "user" ? (
-                <User className="w-4 h-4" />
+                <User className="w-3 h-3 sm:w-4 sm:h-4" />
               ) : (
                 <BotAvatar persona={selectedPersona} provider={message.provider || provider} />
               )}
             </div>
 
             {/* MESSAGE CONTENT */}
-            <div className={`flex-1 space-y-1 min-w-0 ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
-              <div className={`font-semibold text-sm ${message.role === 'user' ? 'text-right' : 'text-left'} w-full`}>
-                {message.role === "user" ? "You" : selectedPersona.name}
+            <div className={`flex-1 space-y-1 min-w-0 max-w-full overflow-hidden ${message.role === 'user' ? 'items-end' : 'items-start'} flex flex-col`}>
+              <div className={`flex items-center gap-2 ${message.role === 'user' ? 'flex-row-reverse' : 'flex-row'}`}>
+                <div className={`font-semibold text-xs sm:text-sm ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+                  {message.role === "user" ? "You" : selectedPersona.name}
+                </div>
+                
+                {/* Dropdown menu untuk delete message */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-4 w-4 sm:h-5 sm:w-5 opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <MoreVertical className="h-3 w-3 sm:h-4 sm:w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align={message.role === 'user' ? 'end' : 'start'}>
+                    <DropdownMenuItem
+                      onClick={() => navigator.clipboard.writeText(message.content)}
+                      className="gap-2"
+                    >
+                      <Copy className="h-3 w-3" />
+                      Copy
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={() => onDeleteMessage(message.id)}
+                      className="gap-2 text-destructive focus:text-destructive"
+                    >
+                      <Trash2 className="h-3 w-3" />
+                      Delete
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <div className={`break-words overflow-hidden max-w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
+              
+              <div className={`break-words overflow-hidden w-full ${message.role === 'user' ? 'text-right' : 'text-left'}`}>
                 {message.type === "image" && message.imageUrl ? (
-                  <div className="space-y-2 pt-2">
+                  <div className="space-y-2 pt-2 w-full">
                     <img
                       src={message.imageUrl}
                       alt="Generated"
-                      className={`rounded-lg max-w-full sm:max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
+                      className={`rounded-lg max-w-full w-full sm:max-w-xs lg:max-w-sm h-auto ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}
                     />
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-xs sm:text-sm break-words">{message.content}</p>
                   </div>
                 ) : message.type === "audio" && message.audioUrl ? (
-                  <div className="space-y-2 pt-2">
-                    <audio controls className={`w-full max-w-sm ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}>
+                  <div className="space-y-2 pt-2 w-full">
+                    <audio controls className={`w-full max-w-full sm:max-w-sm ${message.role === 'user' ? 'ml-auto' : 'mr-auto'}`}>
                       <source src={message.audioUrl} type="audio/mpeg" />
                     </audio>
-                    <p className="text-sm">{message.content}</p>
+                    <p className="text-xs sm:text-sm break-words">{message.content}</p>
                   </div>
                 ) : (
-                  <div className={`prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto ${message.role === 'assistant' ? 'text-left' : ''}`}>
+                  <div className={`prose prose-xs sm:prose-sm max-w-full w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto prose-code:break-words ${message.role === 'assistant' ? 'text-left' : ''}`}>
                     <ReactMarkdown
                       components={markdownComponents}
                       remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
@@ -247,19 +355,19 @@ export default function ChatInterface({
                   </div>
                 )}
               </div>
-              <div className={`flex items-center gap-2 text-xs text-muted-foreground pt-1 ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+              <div className={`flex items-center gap-2 text-xs text-muted-foreground pt-1 flex-wrap ${message.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <span>{formatTimestamp(message.timestamp)}</span>
                 {message.provider && (
-                    <a 
-                      href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                    >
-                      <Badge variant="outline" className="text-xs cursor-pointer hover:ring-2 hover:ring-primary/50">
-                        {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
-                      </Badge>
-                    </a>
-                  )}
+                  <a 
+                    href={message.provider === "lunos" ? "https://lunos.tech/?utm_source=ai-agent-hackathon" : "https://unli.dev/?utm_source=ai-agent-hackathon"} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                  >
+                    <Badge variant="outline" className="text-xs cursor-pointer hover:ring-2 hover:ring-primary/50">
+                      {message.provider === "lunos" ? "Lunos" : "Unli.dev"}
+                    </Badge>
+                  </a>
+                )}
               </div>
             </div>
           </div>
@@ -267,16 +375,16 @@ export default function ChatInterface({
 
         {/* Streaming Message */}
         {streamingMessage && (
-          <div className="flex gap-4 items-start w-full">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+          <div className="flex gap-2 sm:gap-4 items-start w-full">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
-            <div className="flex-1 space-y-1 min-w-0 flex flex-col items-start">
-               <div className="font-semibold text-sm text-left w-full">
+            <div className="flex-1 space-y-1 min-w-0 max-w-full overflow-hidden flex flex-col items-start">
+              <div className="font-semibold text-xs sm:text-sm text-left w-full">
                 {selectedPersona.name}
               </div>
-              <div className="break-words overflow-hidden max-w-full text-left">
-                <div className="prose prose-sm max-w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto text-left">
+              <div className="break-words overflow-hidden w-full text-left">
+                <div className="prose prose-xs sm:prose-sm max-w-full w-full dark:prose-invert prose-pre:max-w-full prose-pre:overflow-x-auto text-left">
                   <ReactMarkdown
                     components={markdownComponents}
                     remarkPlugins={[remarkGfm, remarkBreaks, remarkMath]}
@@ -292,32 +400,32 @@ export default function ChatInterface({
 
         {/* Loading Indicator */}
         {isLoading && !streamingMessage && (
-          <div className="flex gap-4 items-start w-full">
-            <div className="w-8 h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
+          <div className="flex gap-2 sm:gap-4 items-start w-full">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-muted flex items-center justify-center flex-shrink-0 mt-1">
               <BotAvatar persona={selectedPersona} provider={provider} />
             </div>
             <div className="flex-1 space-y-2 min-w-0 flex flex-col items-start">
-                <div className="font-semibold text-sm text-left w-full">
-                    {selectedPersona.name}
-                </div>
-                <div className="flex items-center gap-2">
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                  <TextShimmer duration={1} className="text-sm text-muted-foreground">
-                 {/* <span className="text-sm text-muted-foreground">*/}{getLoadingText()}</TextShimmer>
-                 {/*</span>*/}
-                </div>
+              <div className="font-semibold text-xs sm:text-sm text-left w-full">
+                {selectedPersona.name}
+              </div>
+              <div className="flex items-center gap-2">
+                <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
+                <TextShimmer duration={1} className="text-xs sm:text-sm text-muted-foreground">
+                  {getLoadingText()}
+                </TextShimmer>
+              </div>
             </div>
           </div>
         )}
       </div>
 
-              {/* Input Area */}
-      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-4 w-full">
-        <div className="relative bg-background rounded-lg border">
+      {/* Input Area */}
+      <div className="border-t border-border bg-card/50 backdrop-blur-sm p-2 sm:p-4 w-full flex-shrink-0">
+        <div className="relative bg-background rounded-lg border max-w-full">
           {/* Image Preview Area */}
           {uploadedImage && (
             <div className="p-2 border-b">
-              <div className="relative w-20 h-20">
+              <div className="relative w-16 h-16 sm:w-20 sm:h-20">
                 <img
                   src={uploadedImage}
                   alt="Preview"
@@ -326,16 +434,16 @@ export default function ChatInterface({
                 <Button
                   size="icon"
                   variant="ghost"
-                  className="absolute -top-2 -right-2 h-6 w-6 rounded-full bg-muted hover:bg-destructive text-destructive-foreground"
+                  className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-5 w-5 sm:h-6 sm:w-6 rounded-full bg-muted hover:bg-destructive text-destructive-foreground"
                   onClick={() => setUploadedImage(null)}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-3 w-3 sm:h-4 sm:w-4" />
                 </Button>
               </div>
             </div>
           )}
           
-          <div className="flex items-center space-x-2 p-3 pb-0">
+          <div className="flex items-center space-x-2 p-2 sm:p-3 pb-0">
             <Switch
               id="image-generation-mode"
               checked={isImageGenMode}
@@ -343,15 +451,15 @@ export default function ChatInterface({
             />
             <Label
               htmlFor="image-generation-mode"
-              className="flex items-center gap-2 text-sm text-muted-foreground"
+              className="flex items-center gap-2 text-xs sm:text-sm text-muted-foreground"
             >
-              <ImageIcon className="h-4 w-4" />
-              <span>Imagen</span>
+              <ImageIcon className="h-3 w-3 sm:h-4 sm:w-4" />
+              <span className="hidden sm:inline">Imagen</span>
             </Label>
           </div>
           
           {/* Textarea and Buttons */}
-          <div className="flex items-end gap-2 p-2">
+          <div className="flex items-end gap-1 sm:gap-2 p-2">
             <input
               type="file"
               ref={fileInputRef}
@@ -364,10 +472,10 @@ export default function ChatInterface({
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 h-10 w-10"
+                  className="shrink-0 h-8 w-8 sm:h-10 sm:w-10"
                   onClick={() => fileInputRef.current?.click()}
                 >
-                  <Paperclip className="w-4 h-4" />
+                  <Paperclip className="w-3 h-3 sm:w-4 sm:h-4" />
                 </Button>
               </TooltipTrigger>
               <TooltipContent>
@@ -397,7 +505,7 @@ export default function ChatInterface({
                     ? `Deskripsikan gambarnya...`
                     : `Tanyakan sesuatu...`
               }
-              className="flex-1 min-h-[2.5rem] max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-3 py-2.5"
+              className="flex-1 min-h-[2rem] sm:min-h-[2.5rem] max-h-24 sm:max-h-32 resize-none border-0 shadow-none focus-visible:ring-0 px-2 sm:px-3 py-2 sm:py-2.5 text-xs sm:text-sm"
               disabled={isLoading}
             />
             
@@ -407,12 +515,12 @@ export default function ChatInterface({
                   onClick={sendMessage}
                   disabled={isLoading || (!input.trim() && !uploadedImage)}
                   size="icon"
-                  className="shrink-0 h-10 w-10"
+                  className="shrink-0 h-8 w-8 sm:h-10 sm:w-10"
                 >
                   {isLoading ? (
-                    <Loader2 className="w-4 h-4 animate-spin" />
+                    <Loader2 className="w-3 h-3 sm:w-4 sm:h-4 animate-spin" />
                   ) : (
-                    <Send className="w-4 h-4" />
+                    <Send className="w-3 h-3 sm:w-4 sm:h-4" />
                   )}
                 </Button>
               </TooltipTrigger>
@@ -423,6 +531,6 @@ export default function ChatInterface({
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }

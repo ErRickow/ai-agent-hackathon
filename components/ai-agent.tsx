@@ -187,6 +187,42 @@ function AIAgent() {
     fetchModels();
   }, [provider]);
 
+  const handleDeleteMessage = async (messageId: string) => {
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ messageId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to delete message");
+      }
+      toast.success("Pesan berhasil dihapus");
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal menghapus pesan.");
+    }
+  };
+
+  const handleResetConversation = async () => {
+    try {
+      const response = await fetch('/api/messages', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'reset' }),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to reset conversation");
+      }
+      toast.success("Percakapan berhasil direset");
+    } catch (error) {
+      console.error(error);
+      toast.error("Gagal mereset percakapan.");
+    }
+  };
+
   const generateImage = async () => {
     if (!input.trim() || isLoading) return;
     setIsLoading(true);
@@ -652,6 +688,8 @@ function AIAgent() {
                 isImageGenMode={isImageGenMode}
                 onImageGenToggle={handleImageGenToggle}
                 uploadedImage = { uploadedImage } setUploadedImage = { setUploadedImage }
+                onDeleteMessage={handleDeleteMessage}
+                onResetConversation={onResetConversation}
               />
             )}
             {aiMode === "tts" && (
