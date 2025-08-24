@@ -689,7 +689,7 @@ function AIAgent() {
                 onImageGenToggle={handleImageGenToggle}
                 uploadedImage = { uploadedImage } setUploadedImage = { setUploadedImage }
                 onDeleteMessage={handleDeleteMessage}
-                onResetConversation={onResetConversation}
+                onResetConversation={handleResetConversation}
               />
             )}
             {aiMode === "tts" && (
