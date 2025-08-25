@@ -1,10 +1,8 @@
 <center><b>Proyek Event AI Agent Hackathon</b></center>
 <center>Tema: AI Agent For Kemerdekaan Indonesia</center>
 
-Preview Landing             |  Preview Sidebar
-:-------------------------:|:-------------------------:
-![Demo Landing](/public/demonya.jpg)(https://agentic-merdeka.vercel.app)
-  |  ![Demo Sidebar](/public/demonya-sidebar.jpg)(https://agentic-merdeka.vercel.app)
+[![Demo Landing](/public/demonya.jpg)](https://agentic-merdeka.vercel.app)
+[![Demo Sidebar](/public/demonya-sidebar.jpg)](https://agentic-merdeka.vercel.app)
 
 ### One Click Deploy
 ---
